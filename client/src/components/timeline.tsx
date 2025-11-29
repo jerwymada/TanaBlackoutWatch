@@ -14,18 +14,44 @@ interface TimelineProps {
 
 export function Timeline({ outages, neighborhoodName, currentHour, filterHour }: TimelineProps) {
   const containerRef = useRef<HTMLDivElement>(null);
+  const tomorrowMarkerRef = useRef<HTMLDivElement>(null);
   const [touchStart, setTouchStart] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState(0);
+  const [showTomorrowDate, setShowTomorrowDate] = useState(false);
   const hours = Array.from({ length: 24 }, (_, i) => i);
   
   const today = new Date().toISOString().split('T')[0];
   const tomorrow = format(addDays(new Date(), 1), 'yyyy-MM-dd');
   
-  // Affiche la date de demain si currentHour = 0 (minuit du lendemain)
-  const displayDate = currentHour === 0 
+  const displayDate = showTomorrowDate 
     ? format(addDays(new Date(), 1), 'd MMM', { locale: fr })
     : format(new Date(), 'd MMM', { locale: fr });
+  
+  // Utilise Intersection Observer pour détecter quand les heures du lendemain sont visibles
+  useEffect(() => {
+    if (!tomorrowMarkerRef.current || !containerRef.current) return;
+    
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            setShowTomorrowDate(true);
+          } else {
+            setShowTomorrowDate(false);
+          }
+        });
+      },
+      {
+        root: containerRef.current?.querySelector('[data-radix-scroll-area-viewport]'),
+        threshold: 0.1,
+      }
+    );
+    
+    observer.observe(tomorrowMarkerRef.current);
+    
+    return () => observer.disconnect();
+  }, []);
   
   const hasOutageAtHour = (hour: number, day: 0 | 1 = 0): boolean => {
     const targetDate = day === 0 ? today : tomorrow;
@@ -117,7 +143,7 @@ export function Timeline({ outages, neighborhoodName, currentHour, filterHour }:
                 </div>
               ))}
             </div>
-            <div className="w-px bg-border mx-2" />
+            <div ref={tomorrowMarkerRef} className="w-px bg-border mx-2" />
             <div className="flex gap-1 px-1 pb-1">
               {hours.map(hour => (
                 <div 
