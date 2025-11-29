@@ -21,7 +21,11 @@ export function Timeline({ outages, neighborhoodName, currentHour, filterHour }:
   
   const today = new Date().toISOString().split('T')[0];
   const tomorrow = format(addDays(new Date(), 1), 'yyyy-MM-dd');
-  const displayDate = format(new Date(), 'd MMM', { locale: fr });
+  
+  // Affiche la date de demain si currentHour = 0 (minuit du lendemain)
+  const displayDate = currentHour === 0 
+    ? format(addDays(new Date(), 1), 'd MMM', { locale: fr })
+    : format(new Date(), 'd MMM', { locale: fr });
   
   const hasOutageAtHour = (hour: number, day: 0 | 1 = 0): boolean => {
     const targetDate = day === 0 ? today : tomorrow;
