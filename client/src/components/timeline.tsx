@@ -19,14 +19,21 @@ export function Timeline({ outages, neighborhoodName, currentHour, filterHour }:
   };
 
   useEffect(() => {
-    if (scrollRef.current) {
-      const hourToScroll = filterHour !== null && filterHour !== undefined ? filterHour : currentHour;
-      const slotWidth = 64;
-      const gap = 4;
-      const containerWidth = scrollRef.current.offsetWidth;
-      const scrollPosition = Math.max(0, (hourToScroll * (slotWidth + gap)) - (containerWidth / 2) + (slotWidth / 2));
-      scrollRef.current.scrollTo({ left: scrollPosition, behavior: 'smooth' });
-    }
+    const performScroll = () => {
+      if (scrollRef.current?.querySelector('[role="region"]')) {
+        const scrollArea = scrollRef.current.querySelector('[style*="overflow"]') as HTMLElement;
+        if (scrollArea) {
+          const hourToScroll = filterHour !== null && filterHour !== undefined ? filterHour : currentHour;
+          const slotWidth = 60;
+          const gap = 4;
+          const containerWidth = scrollArea.offsetWidth;
+          const scrollPosition = Math.max(0, (hourToScroll * (slotWidth + gap)) - (containerWidth / 2) + (slotWidth / 2));
+          scrollArea.scrollTo({ left: scrollPosition, behavior: 'smooth' });
+        }
+      }
+    };
+    
+    requestAnimationFrame(performScroll);
   }, [currentHour, filterHour]);
 
   return (
