@@ -7,6 +7,7 @@ import { FilterControls } from "@/components/filter-controls";
 import { NeighborhoodCard } from "@/components/neighborhood-card";
 import { StatusSummary } from "@/components/status-summary";
 import { EmptyState } from "@/components/empty-state";
+import { ExportMenu } from "@/components/export-menu";
 import { 
   NeighborhoodCardSkeleton, 
   StatusSummarySkeleton,
@@ -108,6 +109,10 @@ export default function Home() {
             </div>
             
             <div className="flex items-center gap-2">
+              <ExportMenu 
+                schedules={schedules || []} 
+                disabled={isLoading || isError}
+              />
               <Button
                 variant="ghost"
                 size="icon"
