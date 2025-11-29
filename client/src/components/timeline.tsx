@@ -2,8 +2,6 @@ import { useRef, useEffect, useState } from "react";
 import { TimelineSlot } from "./timeline-slot";
 import type { Outage } from "@shared/schema";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
-import { ChevronLeft, ChevronRight } from "lucide-react";
-import { Button } from "@/components/ui/button";
 
 interface TimelineProps {
   outages: Outage[];
@@ -53,33 +51,8 @@ export function Timeline({ outages, neighborhoodName, currentHour, filterHour }:
     }
   };
 
-  const handleScroll = (direction: string) => {
-    const viewport = containerRef.current?.querySelector('[data-radix-scroll-area-viewport]') as HTMLElement;
-    if (viewport) {
-      const scrollAmount = 100;
-      viewport.scrollLeft += direction === 'left' ? -scrollAmount : scrollAmount;
-    }
-  };
-
   return (
-    <div className="relative w-full" onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
-      <div
-        className="absolute left-0 top-1/2 -translate-y-1/2 z-20 hidden sm:flex items-center justify-center pointer-events-none rounded-md"
-        style={{
-          width: '40.5px',
-          height: '40.5px',
-          background: 'linear-gradient(to left, rgba(255,255,255,0.7) 0%, rgba(255,255,255,0) 100%)',
-        }}
-      />
-      <Button
-        size="icon"
-        variant="ghost"
-        className="absolute left-0 top-1/2 -translate-y-1/2 z-20 hidden sm:flex"
-        onClick={() => handleScroll('left')}
-        data-testid="button-timeline-scroll-left"
-      >
-        <ChevronLeft className="h-4 w-4" />
-      </Button>
+    <div className="w-full" onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
       <ScrollArea className="w-full whitespace-nowrap" ref={containerRef}>
         <div className="flex gap-1 px-1 pb-1">
           {hours.map(hour => (
@@ -104,23 +77,6 @@ export function Timeline({ outages, neighborhoodName, currentHour, filterHour }:
         </div>
         <ScrollBar orientation="horizontal" />
       </ScrollArea>
-      <div
-        className="absolute right-0 top-1/2 -translate-y-1/2 z-20 hidden sm:flex items-center justify-center pointer-events-none rounded-md"
-        style={{
-          width: '40.5px',
-          height: '40.5px',
-          background: 'linear-gradient(to right, rgba(255,255,255,0.7) 0%, rgba(255,255,255,0) 100%)',
-        }}
-      />
-      <Button
-        size="icon"
-        variant="ghost"
-        className="absolute right-0 top-1/2 -translate-y-1/2 z-20 hidden sm:flex"
-        onClick={() => handleScroll('right')}
-        data-testid="button-timeline-scroll-right"
-      >
-        <ChevronRight className="h-4 w-4" />
-      </Button>
     </div>
   );
 }
