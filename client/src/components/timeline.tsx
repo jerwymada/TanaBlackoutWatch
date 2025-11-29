@@ -21,6 +21,7 @@ export function Timeline({ outages, neighborhoodName, currentHour, filterHour }:
   
   const today = new Date().toISOString().split('T')[0];
   const tomorrow = format(addDays(new Date(), 1), 'yyyy-MM-dd');
+  const displayDate = format(new Date(), 'd MMM', { locale: fr });
   
   const hasOutageAtHour = (hour: number, day: 0 | 1 = 0): boolean => {
     const targetDate = day === 0 ? today : tomorrow;
@@ -85,70 +86,73 @@ export function Timeline({ outages, neighborhoodName, currentHour, filterHour }:
   };
 
   return (
-    <div 
-      className={`w-full ${isDragging ? 'cursor-grabbing' : 'cursor-grab'}`}
-      onTouchStart={handleTouchStart} 
-      onTouchEnd={handleTouchEnd}
-      onMouseDown={handleMouseDown}
-      onMouseMove={handleMouseMove}
-      onMouseUp={handleMouseUp}
-      onMouseLeave={handleMouseUp}
-    >
-      <ScrollArea className="w-full whitespace-nowrap cursor-inherit" ref={containerRef}>
-        <div className="flex cursor-inherit pointer-events-none">
-          <div className="flex gap-1 px-1 pb-1">
-            {hours.map(hour => (
-              <div 
-                key={`today-${hour}`}
-                className="min-w-[1.875rem] text-center text-xs text-muted-foreground font-medium cursor-inherit"
-              >
-                {hour.toString().padStart(2, '0')}
-              </div>
-            ))}
-          </div>
-          <div className="flex flex-col justify-center px-2">
-            <div className="text-xs font-semibold text-muted-foreground">
-              {format(new Date(), 'd MMM', { locale: fr })}
+    <div className="w-full">
+      <div className="sticky top-0 z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b px-1 py-2">
+        <div className="text-xs font-semibold text-muted-foreground">
+          {displayDate}
+        </div>
+      </div>
+      <div 
+        className={`w-full ${isDragging ? 'cursor-grabbing' : 'cursor-grab'}`}
+        onTouchStart={handleTouchStart} 
+        onTouchEnd={handleTouchEnd}
+        onMouseDown={handleMouseDown}
+        onMouseMove={handleMouseMove}
+        onMouseUp={handleMouseUp}
+        onMouseLeave={handleMouseUp}
+      >
+        <ScrollArea className="w-full whitespace-nowrap cursor-inherit" ref={containerRef}>
+          <div className="flex cursor-inherit pointer-events-none">
+            <div className="flex gap-1 px-1 pb-1">
+              {hours.map(hour => (
+                <div 
+                  key={`today-${hour}`}
+                  className="min-w-[1.875rem] text-center text-xs text-muted-foreground font-medium cursor-inherit"
+                >
+                  {hour.toString().padStart(2, '0')}
+                </div>
+              ))}
+            </div>
+            <div className="w-px bg-border mx-2" />
+            <div className="flex gap-1 px-1 pb-1">
+              {hours.map(hour => (
+                <div 
+                  key={`tomorrow-${hour}`}
+                  className="min-w-[1.875rem] text-center text-xs text-muted-foreground font-medium cursor-inherit"
+                >
+                  {hour.toString().padStart(2, '0')}
+                </div>
+              ))}
             </div>
           </div>
-          <div className="flex gap-1 px-1 pb-1">
-            {hours.map(hour => (
-              <div 
-                key={`tomorrow-${hour}`}
-                className="min-w-[1.875rem] text-center text-xs text-muted-foreground font-medium cursor-inherit"
-              >
-                {hour.toString().padStart(2, '0')}
-              </div>
-            ))}
+          <div className="flex cursor-inherit pointer-events-none">
+            <div className="flex gap-1 px-1 pb-2">
+              {hours.map(hour => (
+                <TimelineSlot
+                  key={`today-slot-${hour}`}
+                  hour={hour}
+                  hasOutage={hasOutageAtHour(hour, 0)}
+                  neighborhoodName={neighborhoodName}
+                  isCurrentHour={hour === currentHour}
+                />
+              ))}
+            </div>
+            <div className="w-px bg-border mx-2" />
+            <div className="flex gap-1 px-1 pb-2">
+              {hours.map(hour => (
+                <TimelineSlot
+                  key={`tomorrow-slot-${hour}`}
+                  hour={hour}
+                  hasOutage={hasOutageAtHour(hour, 1)}
+                  neighborhoodName={neighborhoodName}
+                  isCurrentHour={false}
+                />
+              ))}
+            </div>
           </div>
-        </div>
-        <div className="flex cursor-inherit pointer-events-none">
-          <div className="flex gap-1 px-1 pb-2">
-            {hours.map(hour => (
-              <TimelineSlot
-                key={`today-slot-${hour}`}
-                hour={hour}
-                hasOutage={hasOutageAtHour(hour, 0)}
-                neighborhoodName={neighborhoodName}
-                isCurrentHour={hour === currentHour}
-              />
-            ))}
-          </div>
-          <div className="px-2" />
-          <div className="flex gap-1 px-1 pb-2">
-            {hours.map(hour => (
-              <TimelineSlot
-                key={`tomorrow-slot-${hour}`}
-                hour={hour}
-                hasOutage={hasOutageAtHour(hour, 1)}
-                neighborhoodName={neighborhoodName}
-                isCurrentHour={false}
-              />
-            ))}
-          </div>
-        </div>
-        <ScrollBar orientation="horizontal" />
-      </ScrollArea>
+          <ScrollBar orientation="horizontal" />
+        </ScrollArea>
+      </div>
     </div>
   );
 }
