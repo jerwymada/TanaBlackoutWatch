@@ -22,7 +22,7 @@ export function TimelineSlot({ hour, hasOutage, neighborhoodName, isCurrentHour 
           className={cn(
             "min-w-[1.875rem] h-10 rounded-md flex items-center justify-center text-xs font-medium transition-all duration-200 cursor-default select-none",
             hasOutage 
-              ? "bg-[hsl(0,100%,84%)] text-[hsl(6,78%,57%)]" 
+              ? "bg-[hsl(0,100%,92%)] text-[hsl(6,78%,57%)]" 
               : "bg-active/20 text-active dark:bg-active/30",
             isCurrentHour && "ring-2 ring-foreground/30 ring-offset-2 ring-offset-background"
           )}
