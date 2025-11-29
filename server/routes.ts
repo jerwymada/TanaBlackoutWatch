@@ -147,8 +147,8 @@ export async function registerRoutes(
       const outage = await storage.createOutage({ 
         neighborhoodId: parseInt(neighborhoodId, 10),
         date, 
-        startHour: parseInt(startHour, 10), 
-        endHour: parseInt(endHour, 10),
+        startHour: parseFloat(startHour), 
+        endHour: parseFloat(endHour),
         reason
       });
       res.json(outage);

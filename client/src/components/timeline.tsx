@@ -20,7 +20,8 @@ export function Timeline({ outages, neighborhoodName, currentHour, filterHour }:
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState(0);
   const [showTomorrowDate, setShowTomorrowDate] = useState(false);
-  const hours = Array.from({ length: 24 }, (_, i) => i);
+  // Create 48 slots for 30-minute intervals (0.0, 0.5, 1.0, 1.5, ..., 23.5)
+  const slots = Array.from({ length: 48 }, (_, i) => i * 0.5);
   
   const today = new Date().toISOString().split('T')[0];
   const tomorrow = format(addDays(new Date(), 1), 'yyyy-MM-dd');
@@ -53,23 +54,23 @@ export function Timeline({ outages, neighborhoodName, currentHour, filterHour }:
     return () => viewport.removeEventListener('scroll', handleScroll);
   }, []);
   
-  const hasOutageAtHour = (hour: number, day: 0 | 1 = 0): boolean => {
+  const hasOutageAtSlot = (slot: number, day: 0 | 1 = 0): boolean => {
     const targetDate = day === 0 ? today : tomorrow;
-    const targetHour = hour % 24;
+    const targetSlot = slot % 24;
     return outages.some(outage => 
       outage.date === targetDate && 
-      targetHour >= outage.startHour && 
-      targetHour < outage.endHour
+      targetSlot >= outage.startHour && 
+      targetSlot < outage.endHour
     );
   };
 
-  const getOutageForHour = (hour: number, day: 0 | 1 = 0) => {
+  const getOutageForSlot = (slot: number, day: 0 | 1 = 0) => {
     const targetDate = day === 0 ? today : tomorrow;
-    const targetHour = hour % 24;
+    const targetSlot = slot % 24;
     return outages.find(outage => 
       outage.date === targetDate && 
-      targetHour >= outage.startHour && 
-      targetHour < outage.endHour
+      targetSlot >= outage.startHour && 
+      targetSlot < outage.endHour
     );
   };
 
@@ -80,10 +81,12 @@ export function Timeline({ outages, neighborhoodName, currentHour, filterHour }:
       const scrollViewport = containerRef.current?.querySelector('[data-radix-scroll-area-viewport]') as HTMLElement;
       if (scrollViewport) {
         const hourToScroll = filterHour !== null && filterHour !== undefined ? filterHour : currentHour;
-        const slotWidth = 30;
-        const gap = 4;
+        const slotWidth = 15; // Smaller width for 30-minute slots
+        const gap = 2;
         const containerWidth = scrollViewport.clientWidth;
-        const scrollPosition = Math.max(0, (hourToScroll * (slotWidth + gap)) - (containerWidth / 2) + (slotWidth / 2));
+        // Convert hour to slot index (hour * 2 for 30-minute intervals)
+        const slotIndex = hourToScroll * 2;
+        const scrollPosition = Math.max(0, (slotIndex * (slotWidth + gap)) - (containerWidth / 2) + (slotWidth / 2));
         scrollViewport.scrollLeft = scrollPosition;
       }
     }, 50);
@@ -143,44 +146,58 @@ export function Timeline({ outages, neighborhoodName, currentHour, filterHour }:
       >
         <ScrollArea className="w-full whitespace-nowrap" ref={containerRef}>
           <div className="flex pointer-events-none">
-            <div className="flex gap-1 px-1 pb-1">
-              {hours.map(hour => (
-                <div 
-                  key={`today-${hour}`}
-                  className={cn(
-                    "min-w-[1.875rem] text-center text-xs font-medium",
-                    hour === currentHour 
-                      ? "font-bold text-foreground" 
-                      : "text-muted-foreground"
-                  )}
-                >
-                  {hour.toString().padStart(2, '0')}
-                </div>
-              ))}
+            <div className="flex gap-0.5 px-1 pb-1">
+              {slots.map((slot, index) => {
+                const hour = Math.floor(slot);
+                const isHalfHour = slot % 1 !== 0;
+                const isCurrentSlot = hour === currentHour && !isHalfHour;
+                // Only show hour label on full hours (0, 1, 2, etc.)
+                if (isHalfHour) return <div key={`today-${slot}`} className="min-w-[0.9375rem]" />;
+                return (
+                  <div 
+                    key={`today-${slot}`}
+                    className={cn(
+                      "min-w-[0.9375rem] text-center text-[10px] font-medium",
+                      isCurrentSlot 
+                        ? "font-bold text-foreground" 
+                        : "text-muted-foreground"
+                    )}
+                  >
+                    {hour.toString().padStart(2, '0')}
+                  </div>
+                );
+              })}
             </div>
             <div ref={tomorrowMarkerRef} className="w-px bg-border mx-2" />
-            <div className="flex gap-1 px-1 pb-1">
-              {hours.map(hour => (
-                <div 
-                  key={`tomorrow-${hour}`}
-                  className="min-w-[1.875rem] text-center text-xs text-muted-foreground font-medium"
-                >
-                  {hour.toString().padStart(2, '0')}
-                </div>
-              ))}
+            <div className="flex gap-0.5 px-1 pb-1">
+              {slots.map((slot) => {
+                const hour = Math.floor(slot);
+                const isHalfHour = slot % 1 !== 0;
+                if (isHalfHour) return <div key={`tomorrow-${slot}`} className="min-w-[0.9375rem]" />;
+                return (
+                  <div 
+                    key={`tomorrow-${slot}`}
+                    className="min-w-[0.9375rem] text-center text-[10px] text-muted-foreground font-medium"
+                  >
+                    {hour.toString().padStart(2, '0')}
+                  </div>
+                );
+              })}
             </div>
           </div>
           <div className="flex">
-            <div className="flex gap-1 px-1 pb-2 pointer-events-auto">
-              {hours.map(hour => {
-                const outage = getOutageForHour(hour, 0);
+            <div className="flex gap-0.5 px-1 pb-2 pointer-events-auto">
+              {slots.map(slot => {
+                const outage = getOutageForSlot(slot, 0);
+                const hour = Math.floor(slot);
                 return (
                   <TimelineSlot
-                    key={`today-slot-${hour}`}
+                    key={`today-slot-${slot}`}
+                    slot={slot}
                     hour={hour}
-                    hasOutage={hasOutageAtHour(hour, 0)}
+                    hasOutage={hasOutageAtSlot(slot, 0)}
                     neighborhoodName={neighborhoodName}
-                    isCurrentHour={hour === currentHour}
+                    isCurrentSlot={hour === currentHour && slot % 1 === 0}
                     outageStartHour={outage?.startHour}
                     outageEndHour={outage?.endHour}
                     outageReason={outage?.reason || undefined}
@@ -189,16 +206,18 @@ export function Timeline({ outages, neighborhoodName, currentHour, filterHour }:
               })}
             </div>
             <div className="w-px bg-border mx-2 pointer-events-none" />
-            <div className="flex gap-1 px-1 pb-2 pointer-events-auto">
-              {hours.map(hour => {
-                const outage = getOutageForHour(hour, 1);
+            <div className="flex gap-0.5 px-1 pb-2 pointer-events-auto">
+              {slots.map(slot => {
+                const outage = getOutageForSlot(slot, 1);
+                const hour = Math.floor(slot);
                 return (
                   <TimelineSlot
-                    key={`tomorrow-slot-${hour}`}
+                    key={`tomorrow-slot-${slot}`}
+                    slot={slot}
                     hour={hour}
-                    hasOutage={hasOutageAtHour(hour, 1)}
+                    hasOutage={hasOutageAtSlot(slot, 1)}
                     neighborhoodName={neighborhoodName}
-                    isCurrentHour={false}
+                    isCurrentSlot={false}
                     outageStartHour={outage?.startHour}
                     outageEndHour={outage?.endHour}
                     outageReason={outage?.reason || undefined}

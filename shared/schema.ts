@@ -1,4 +1,4 @@
-import { pgTable, text, integer, serial, index } from "drizzle-orm/pg-core";
+import { pgTable, text, integer, serial, index, real } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
@@ -13,8 +13,8 @@ export const outages = pgTable("outages", {
   id: serial("id").primaryKey(),
   neighborhoodId: integer("neighborhood_id").notNull().references(() => neighborhoods.id),
   date: text("date").notNull(),
-  startHour: integer("start_hour").notNull(),
-  endHour: integer("end_hour").notNull(),
+  startHour: real("start_hour").notNull(), // Supports half-hours: 0.0, 0.5, 1.0, 1.5, etc.
+  endHour: real("end_hour").notNull(), // Supports half-hours: 0.0, 0.5, 1.0, 1.5, etc.
   reason: text("reason"),
 }, (table) => [
   index("outages_date_idx").on(table.date),

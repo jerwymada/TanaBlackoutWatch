@@ -2,20 +2,29 @@ import type { OutageSchedule } from "@shared/schema";
 import { format, addDays, parse } from "date-fns";
 import { fr } from "date-fns/locale";
 
+function formatTime(timeSlot: number): string {
+  const h = Math.floor(timeSlot);
+  const m = timeSlot % 1 !== 0 ? '30' : '00';
+  return `${h.toString().padStart(2, '0')}h${m}`;
+}
+
 function formatICalDateTime(dateStr: string, hour: number): { date: string; time: string } {
   const baseDate = parse(dateStr, "yyyy-MM-dd", new Date());
+  const h = Math.floor(hour);
+  const m = hour % 1 !== 0 ? 30 : 0;
   
   if (hour >= 24) {
     const nextDay = addDays(baseDate, 1);
+    const adjustedHour = Math.floor(hour - 24);
     return {
       date: format(nextDay, "yyyyMMdd"),
-      time: ((hour - 24)).toString().padStart(2, '0') + '0000'
+      time: adjustedHour.toString().padStart(2, '0') + m.toString().padStart(2, '0') + '00'
     };
   }
   
   return {
     date: format(baseDate, "yyyyMMdd"),
-    time: hour.toString().padStart(2, '0') + '0000'
+    time: h.toString().padStart(2, '0') + m.toString().padStart(2, '0') + '00'
   };
 }
 
@@ -43,7 +52,7 @@ DTEND;TZID=Indian/Antananarivo:${end.date}T${end.time}
 DTSTAMP:${dtstamp}
 UID:${uid}
 SUMMARY:Coupure électricité - ${schedule.neighborhood.name}
-DESCRIPTION:Délestage prévu de ${outage.startHour.toString().padStart(2, '0')}h à ${outage.endHour.toString().padStart(2, '0')}h dans le quartier ${schedule.neighborhood.name} (${schedule.neighborhood.district}).
+DESCRIPTION:Délestage prévu de ${formatTime(outage.startHour)} à ${formatTime(outage.endHour)} dans le quartier ${schedule.neighborhood.name} (${schedule.neighborhood.district}).
 LOCATION:${schedule.neighborhood.name}, ${schedule.neighborhood.district}, Antananarivo
 STATUS:CONFIRMED
 CATEGORIES:DELESTAGE,ELECTRICITY
@@ -80,7 +89,7 @@ DTEND;TZID=Indian/Antananarivo:${end.date}T${end.time}
 DTSTAMP:${dtstamp}
 UID:${uid}
 SUMMARY:Coupure - ${schedule.neighborhood.name}
-DESCRIPTION:Délestage prévu de ${outage.startHour.toString().padStart(2, '0')}h à ${outage.endHour.toString().padStart(2, '0')}h dans le quartier ${schedule.neighborhood.name} (${schedule.neighborhood.district}).
+DESCRIPTION:Délestage prévu de ${formatTime(outage.startHour)} à ${formatTime(outage.endHour)} dans le quartier ${schedule.neighborhood.name} (${schedule.neighborhood.district}).
 LOCATION:${schedule.neighborhood.name}, ${schedule.neighborhood.district}, Antananarivo
 STATUS:CONFIRMED
 CATEGORIES:DELESTAGE,ELECTRICITY
@@ -252,7 +261,7 @@ export function generatePDFContent(schedules: OutageSchedule[]): string {
           html += `        <span class="active-badge">Pas de coupure</span>\n`;
         } else {
           schedule.outages.forEach(outage => {
-            html += `        <span class="outage-badge">${outage.startHour.toString().padStart(2, '0')}h - ${outage.endHour.toString().padStart(2, '0')}h</span>\n`;
+            html += `        <span class="outage-badge">${formatTime(outage.startHour)} - ${formatTime(outage.endHour)}</span>\n`;
           });
         }
         html += `

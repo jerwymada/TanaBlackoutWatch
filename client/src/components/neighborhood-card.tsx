@@ -120,7 +120,11 @@ export function NeighborhoodCard({
           {nextOutage && !hasCurrentOutage && (
             <div className="flex items-center gap-1.5">
               <div className="w-3 h-3 rounded-full bg-attention" />
-              <span>Prochaine: {nextOutage.startHour.toString().padStart(2, '0')}h</span>
+              <span>Prochaine: {(() => {
+                const h = Math.floor(nextOutage.startHour);
+                const m = nextOutage.startHour % 1 !== 0 ? '30' : '00';
+                return `${h.toString().padStart(2, '0')}h${m}`;
+              })()}</span>
             </div>
           )}
         </div>

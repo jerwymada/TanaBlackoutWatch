@@ -6,42 +6,55 @@ import {
 } from "@/components/ui/tooltip";
 
 interface TimelineSlotProps {
-  hour: number;
+  slot: number; // Represents time in hours with half-hours: 0.0, 0.5, 1.0, 1.5, etc.
+  hour: number; // The hour part (floor of slot)
   hasOutage: boolean;
   neighborhoodName: string;
-  isCurrentHour?: boolean;
+  isCurrentSlot?: boolean;
   outageStartHour?: number;
   outageEndHour?: number;
   outageReason?: string;
 }
 
 export function TimelineSlot({ 
+  slot,
   hour, 
   hasOutage, 
   neighborhoodName, 
-  isCurrentHour,
+  isCurrentSlot,
   outageStartHour,
   outageEndHour,
   outageReason,
 }: TimelineSlotProps) {
-  const formattedHour = `${hour.toString().padStart(2, '0')}:00`;
-  const outageStartFormatted = outageStartHour ? `${outageStartHour.toString().padStart(2, '0')}:00` : '';
-  const outageEndFormatted = outageEndHour ? `${outageEndHour.toString().padStart(2, '0')}:00` : '';
-  const outageDuration = outageEndHour && outageStartHour ? outageEndHour - outageStartHour : 0;
+  const isHalfHour = slot % 1 !== 0;
+  const minutes = isHalfHour ? '30' : '00';
+  const formattedTime = `${hour.toString().padStart(2, '0')}:${minutes}`;
+  
+  const formatTime = (timeSlot: number): string => {
+    const h = Math.floor(timeSlot);
+    const m = timeSlot % 1 !== 0 ? '30' : '00';
+    return `${h.toString().padStart(2, '0')}:${m}`;
+  };
+  
+  const outageStartFormatted = outageStartHour !== undefined ? formatTime(outageStartHour) : '';
+  const outageEndFormatted = outageEndHour !== undefined ? formatTime(outageEndHour) : '';
+  const outageDuration = outageEndHour !== undefined && outageStartHour !== undefined 
+    ? (outageEndHour - outageStartHour).toFixed(1) 
+    : '0';
   
   return (
     <Tooltip>
       <TooltipTrigger asChild>
         <div
           className={cn(
-            "min-w-[1.875rem] h-10 rounded-md flex items-center justify-center text-xs font-medium transition-all duration-200 cursor-default select-none",
+            "min-w-[0.9375rem] h-10 rounded-sm flex items-center justify-center text-[10px] font-medium transition-all duration-200 cursor-default select-none",
             hasOutage 
               ? "bg-[hsl(0,100%,92%)] text-[hsl(6,78%,57%)]" 
               : "bg-active/20 text-active dark:bg-active/30",
-            isCurrentHour && "ring-2 ring-foreground/30 ring-offset-2 ring-offset-background"
+            isCurrentSlot && "ring-2 ring-foreground/30 ring-offset-2 ring-offset-background"
           )}
-          data-testid={`timeline-slot-${hour}`}
-          aria-label={`${formattedHour} - ${hasOutage ? 'Coupure' : 'Électricité active'} - ${neighborhoodName}`}
+          data-testid={`timeline-slot-${slot}`}
+          aria-label={`${formattedTime} - ${hasOutage ? 'Coupure' : 'Électricité active'} - ${neighborhoodName}`}
         >
           {hasOutage && (
             <div className="w-2 h-2 rounded-full bg-[hsl(6,78%,57%)]" />
@@ -72,7 +85,7 @@ export function TimelineSlot({
           </>
         ) : (
           <p className="text-xs opacity-80">
-            Électricité active à {formattedHour}
+            Électricité active à {formattedTime}
           </p>
         )}
       </TooltipContent>

@@ -29,7 +29,9 @@ export default function Admin() {
   // Outage form state
   const [outageDate, setOutageDate] = useState(new Date().toISOString().split("T")[0]);
   const [startHour, setStartHour] = useState("6");
+  const [startMinute, setStartMinute] = useState("0");
   const [endHour, setEndHour] = useState("9");
+  const [endMinute, setEndMinute] = useState("0");
   const [reason, setReason] = useState("");
   const [selectedNeighborhoods, setSelectedNeighborhoods] = useState<number[]>([]);
 
@@ -54,11 +56,14 @@ export default function Admin() {
 
   const createOutageMutation = useMutation({
     mutationFn: async (neighborhoodId: number) => {
+      // Convert hour and minute to decimal (e.g., 6:30 -> 6.5, 9:00 -> 9.0)
+      const startTime = parseFloat(startHour) + (parseInt(startMinute) / 60);
+      const endTime = parseFloat(endHour) + (parseInt(endMinute) / 60);
       return apiRequest("POST", "/api/admin/outages", {
         neighborhoodId,
         date: outageDate,
-        startHour: parseInt(startHour),
-        endHour: parseInt(endHour),
+        startHour: startTime,
+        endHour: endTime,
         reason: reason || undefined,
       });
     },
@@ -173,7 +178,7 @@ export default function Admin() {
                 <CardTitle>Ajouter une Coupure</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="grid grid-cols-3 gap-4">
+                <div className="grid grid-cols-2 gap-4">
                   <div>
                     <Label htmlFor="date">Date</Label>
                     <Input
@@ -184,6 +189,19 @@ export default function Admin() {
                       data-testid="input-outage-date"
                     />
                   </div>
+                  <div>
+                    <Label>Raison (optionnel)</Label>
+                    <Input
+                      id="reason"
+                      placeholder="Ex: Maintenance, Réparation réseau..."
+                      value={reason}
+                      onChange={(e) => setReason(e.target.value)}
+                      data-testid="input-reason"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-4 gap-4">
                   <div>
                     <Label htmlFor="startHour">Heure de début</Label>
                     <Input
@@ -197,6 +215,18 @@ export default function Admin() {
                     />
                   </div>
                   <div>
+                    <Label htmlFor="startMinute">Minute de début</Label>
+                    <Select value={startMinute} onValueChange={setStartMinute}>
+                      <SelectTrigger id="startMinute" data-testid="select-start-minute">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="0">00</SelectItem>
+                        <SelectItem value="30">30</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
                     <Label htmlFor="endHour">Heure de fin</Label>
                     <Input
                       id="endHour"
@@ -208,17 +238,18 @@ export default function Admin() {
                       data-testid="input-end-hour"
                     />
                   </div>
-                </div>
-
-                <div>
-                  <Label htmlFor="reason">Raison (optionnel)</Label>
-                  <Input
-                    id="reason"
-                    placeholder="Ex: Maintenance, Réparation réseau..."
-                    value={reason}
-                    onChange={(e) => setReason(e.target.value)}
-                    data-testid="input-reason"
-                  />
+                  <div>
+                    <Label htmlFor="endMinute">Minute de fin</Label>
+                    <Select value={endMinute} onValueChange={setEndMinute}>
+                      <SelectTrigger id="endMinute" data-testid="select-end-minute">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="0">00</SelectItem>
+                        <SelectItem value="30">30</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
 
                 <div>

@@ -32,7 +32,8 @@ export function FilterControls({
   activeFiltersCount,
   onClearFilters,
 }: FilterControlsProps) {
-  const hours = Array.from({ length: 24 }, (_, i) => i);
+  // Create slots for hours with 30-minute intervals
+  const timeSlots = Array.from({ length: 48 }, (_, i) => i * 0.5);
 
   return (
     <div className="space-y-3">
@@ -60,11 +61,15 @@ export function FilterControls({
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Toutes les heures</SelectItem>
-              {hours.map(hour => (
-                <SelectItem key={hour} value={hour.toString()}>
-                  {hour.toString().padStart(2, '0')}:00
-                </SelectItem>
-              ))}
+              {timeSlots.map(slot => {
+                const hour = Math.floor(slot);
+                const minute = slot % 1 !== 0 ? '30' : '00';
+                return (
+                  <SelectItem key={slot} value={slot.toString()}>
+                    {hour.toString().padStart(2, '0')}:{minute}
+                  </SelectItem>
+                );
+              })}
             </SelectContent>
           </Select>
 
@@ -107,18 +112,23 @@ export function FilterControls({
             </Badge>
           )}
           
-          {selectedHour !== "all" && (
-            <Badge variant="secondary" className="gap-1.5">
-              Heure: {selectedHour.padStart(2, '0')}:00
-              <button 
-                onClick={() => onHourChange('all')}
-                className="hover:opacity-70"
-                aria-label="Supprimer le filtre d'heure"
-              >
-                <X className="h-3 w-3" />
-              </button>
-            </Badge>
-          )}
+          {selectedHour !== "all" && (() => {
+            const slot = parseFloat(selectedHour);
+            const hour = Math.floor(slot);
+            const minute = slot % 1 !== 0 ? '30' : '00';
+            return (
+              <Badge variant="secondary" className="gap-1.5">
+                Heure: {hour.toString().padStart(2, '0')}:{minute}
+                <button 
+                  onClick={() => onHourChange('all')}
+                  className="hover:opacity-70"
+                  aria-label="Supprimer le filtre d'heure"
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              </Badge>
+            );
+          })()}
           
           {showFavoritesOnly && (
             <Badge variant="secondary" className="gap-1.5 bg-favorite/20 text-foreground">

@@ -60,7 +60,7 @@ export default function Home() {
     }
 
     if (selectedHour !== "all") {
-      const hour = parseInt(selectedHour, 10);
+      const hour = parseFloat(selectedHour);
       filtered = filtered.filter(schedule =>
         schedule.outages.some(outage => 
           hour >= outage.startHour && hour < outage.endHour
@@ -91,7 +91,7 @@ export default function Home() {
     setShowFavoritesOnly(false);
   };
 
-  const filterHour = selectedHour !== "all" ? parseInt(selectedHour, 10) : null;
+  const filterHour = selectedHour !== "all" ? parseFloat(selectedHour) : null;
 
   return (
     <div className="min-h-screen bg-background">
