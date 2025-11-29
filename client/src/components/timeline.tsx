@@ -177,6 +177,7 @@ export function Timeline({ outages, neighborhoodName, currentHour, filterHour }:
                     isCurrentHour={hour === currentHour}
                     outageStartHour={outage?.startHour}
                     outageEndHour={outage?.endHour}
+                    outageReason={outage?.reason}
                   />
                 );
               })}
@@ -194,6 +195,7 @@ export function Timeline({ outages, neighborhoodName, currentHour, filterHour }:
                     isCurrentHour={false}
                     outageStartHour={outage?.startHour}
                     outageEndHour={outage?.endHour}
+                    outageReason={outage?.reason}
                   />
                 );
               })}

@@ -140,7 +140,7 @@ export async function registerRoutes(
 
   app.post("/api/admin/outages", async (req, res) => {
     try {
-      const { neighborhoodId, date, startHour, endHour } = req.body;
+      const { neighborhoodId, date, startHour, endHour, reason } = req.body;
       if (!neighborhoodId || !date || startHour === undefined || endHour === undefined) {
         return res.status(400).json({ error: "Missing required fields" });
       }
@@ -148,7 +148,8 @@ export async function registerRoutes(
         neighborhoodId: parseInt(neighborhoodId, 10),
         date, 
         startHour: parseInt(startHour, 10), 
-        endHour: parseInt(endHour, 10) 
+        endHour: parseInt(endHour, 10),
+        reason
       });
       res.json(outage);
     } catch (error) {

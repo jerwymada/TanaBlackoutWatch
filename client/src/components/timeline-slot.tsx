@@ -12,6 +12,7 @@ interface TimelineSlotProps {
   isCurrentHour?: boolean;
   outageStartHour?: number;
   outageEndHour?: number;
+  outageReason?: string;
 }
 
 export function TimelineSlot({ 
@@ -21,6 +22,7 @@ export function TimelineSlot({
   isCurrentHour,
   outageStartHour,
   outageEndHour,
+  outageReason,
 }: TimelineSlotProps) {
   const formattedHour = `${hour.toString().padStart(2, '0')}:00`;
   const outageStartFormatted = outageStartHour ? `${outageStartHour.toString().padStart(2, '0')}:00` : '';
@@ -62,6 +64,11 @@ export function TimelineSlot({
             <p className="text-xs opacity-80">
               Durée: {outageDuration}h
             </p>
+            {outageReason && (
+              <p className="text-xs opacity-80">
+                Raison: {outageReason}
+              </p>
+            )}
           </>
         ) : (
           <p className="text-xs opacity-80">

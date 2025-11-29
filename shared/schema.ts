@@ -15,6 +15,7 @@ export const outages = pgTable("outages", {
   date: text("date").notNull(),
   startHour: integer("start_hour").notNull(),
   endHour: integer("end_hour").notNull(),
+  reason: text("reason"),
 }, (table) => [
   index("outages_date_idx").on(table.date),
   index("outages_neighborhood_idx").on(table.neighborhoodId),

@@ -28,6 +28,7 @@ export default function Admin() {
   const [outageDate, setOutageDate] = useState(new Date().toISOString().split("T")[0]);
   const [startHour, setStartHour] = useState("6");
   const [endHour, setEndHour] = useState("9");
+  const [reason, setReason] = useState("");
   const [selectedNeighborhoods, setSelectedNeighborhoods] = useState<number[]>([]);
 
   // Neighborhood form state
@@ -45,12 +46,14 @@ export default function Admin() {
         date: outageDate,
         startHour: parseInt(startHour),
         endHour: parseInt(endHour),
+        reason: reason || undefined,
       });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/schedules"] });
       toast({ title: "Coupure créée", description: "Les coupures ont été ajoutées avec succès" });
       setSelectedNeighborhoods([]);
+      setReason("");
     },
     onError: () => {
       toast({ title: "Erreur", description: "Impossible de créer la coupure", variant: "destructive" });
@@ -188,6 +191,17 @@ export default function Admin() {
                       data-testid="input-end-hour"
                     />
                   </div>
+                </div>
+
+                <div>
+                  <Label htmlFor="reason">Raison (optionnel)</Label>
+                  <Input
+                    id="reason"
+                    placeholder="Ex: Maintenance, Réparation réseau..."
+                    value={reason}
+                    onChange={(e) => setReason(e.target.value)}
+                    data-testid="input-reason"
+                  />
                 </div>
 
                 <div>
