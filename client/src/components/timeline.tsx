@@ -2,6 +2,8 @@ import { useRef, useEffect, useState } from "react";
 import { TimelineSlot } from "./timeline-slot";
 import type { Outage } from "@shared/schema";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
+import { format, addDays } from "date-fns";
+import { fr } from "date-fns/locale";
 
 interface TimelineProps {
   outages: Outage[];
@@ -17,8 +19,17 @@ export function Timeline({ outages, neighborhoodName, currentHour, filterHour }:
   const [dragStart, setDragStart] = useState(0);
   const hours = Array.from({ length: 24 }, (_, i) => i);
   
-  const hasOutageAtHour = (hour: number): boolean => {
-    return outages.some(outage => hour >= outage.startHour && hour < outage.endHour);
+  const today = new Date().toISOString().split('T')[0];
+  const tomorrow = format(addDays(new Date(), 1), 'yyyy-MM-dd');
+  
+  const hasOutageAtHour = (hour: number, day: 0 | 1 = 0): boolean => {
+    const targetDate = day === 0 ? today : tomorrow;
+    const targetHour = hour % 24;
+    return outages.some(outage => 
+      outage.date === targetDate && 
+      targetHour >= outage.startHour && 
+      targetHour < outage.endHour
+    );
   };
 
   useEffect(() => {
@@ -37,7 +48,7 @@ export function Timeline({ outages, neighborhoodName, currentHour, filterHour }:
     }, 50);
     
     return () => clearTimeout(timer);
-  }, [currentHour, filterHour]);
+  }, [currentHour, filterHour, today]);
 
   const handleTouchStart = (e: React.TouchEvent) => {
     setTouchStart(e.touches[0].clientX);
@@ -84,26 +95,57 @@ export function Timeline({ outages, neighborhoodName, currentHour, filterHour }:
       onMouseLeave={handleMouseUp}
     >
       <ScrollArea className="w-full whitespace-nowrap cursor-inherit" ref={containerRef}>
-        <div className="flex gap-1 px-1 pb-1 cursor-inherit pointer-events-none">
-          {hours.map(hour => (
-            <div 
-              key={hour} 
-              className="min-w-[1.875rem] text-center text-xs text-muted-foreground font-medium cursor-inherit"
-            >
-              {hour.toString().padStart(2, '0')}
+        <div className="flex cursor-inherit pointer-events-none">
+          <div className="flex gap-1 px-1 pb-1">
+            {hours.map(hour => (
+              <div 
+                key={`today-${hour}`}
+                className="min-w-[1.875rem] text-center text-xs text-muted-foreground font-medium cursor-inherit"
+              >
+                {hour.toString().padStart(2, '0')}
+              </div>
+            ))}
+          </div>
+          <div className="flex flex-col justify-center px-2">
+            <div className="text-xs font-semibold text-muted-foreground">
+              {format(new Date(), 'd MMM', { locale: fr })}
             </div>
-          ))}
+          </div>
+          <div className="flex gap-1 px-1 pb-1">
+            {hours.map(hour => (
+              <div 
+                key={`tomorrow-${hour}`}
+                className="min-w-[1.875rem] text-center text-xs text-muted-foreground font-medium cursor-inherit"
+              >
+                {hour.toString().padStart(2, '0')}
+              </div>
+            ))}
+          </div>
         </div>
-        <div className="flex gap-1 px-1 pb-2 cursor-inherit pointer-events-none">
-          {hours.map(hour => (
-            <TimelineSlot
-              key={hour}
-              hour={hour}
-              hasOutage={hasOutageAtHour(hour)}
-              neighborhoodName={neighborhoodName}
-              isCurrentHour={hour === currentHour}
-            />
-          ))}
+        <div className="flex cursor-inherit pointer-events-none">
+          <div className="flex gap-1 px-1 pb-2">
+            {hours.map(hour => (
+              <TimelineSlot
+                key={`today-slot-${hour}`}
+                hour={hour}
+                hasOutage={hasOutageAtHour(hour, 0)}
+                neighborhoodName={neighborhoodName}
+                isCurrentHour={hour === currentHour}
+              />
+            ))}
+          </div>
+          <div className="px-2" />
+          <div className="flex gap-1 px-1 pb-2">
+            {hours.map(hour => (
+              <TimelineSlot
+                key={`tomorrow-slot-${hour}`}
+                hour={hour}
+                hasOutage={hasOutageAtHour(hour, 1)}
+                neighborhoodName={neighborhoodName}
+                isCurrentHour={false}
+              />
+            ))}
+          </div>
         </div>
         <ScrollBar orientation="horizontal" />
       </ScrollArea>
