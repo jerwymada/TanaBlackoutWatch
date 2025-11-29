@@ -114,12 +114,12 @@ export function NeighborhoodCard({
         </div>
         <div className="flex items-center gap-4 text-sm text-muted-foreground flex-wrap">
           <div className="flex items-center gap-1.5">
-            <div className="w-3 h-3 rounded-sm bg-outage" />
+            <div className="w-3 h-3 rounded-full bg-outage" />
             <span>{totalOutageHours}h de coupure</span>
           </div>
           {nextOutage && !hasCurrentOutage && (
             <div className="flex items-center gap-1.5">
-              <div className="w-3 h-3 rounded-sm bg-attention" />
+              <div className="w-3 h-3 rounded-full bg-attention" />
               <span>Prochaine: {nextOutage.startHour.toString().padStart(2, '0')}h</span>
             </div>
           )}
