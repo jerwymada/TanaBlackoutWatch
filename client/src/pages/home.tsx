@@ -22,6 +22,7 @@ export default function Home() {
   const [selectedHour, setSelectedHour] = useState("all");
   const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
   const [currentHour, setCurrentHour] = useState(() => new Date().getHours());
+  const [expandedCardId, setExpandedCardId] = useState<number | null>(null);
   
   const { favorites, toggleFavorite, isFavorite } = useFavorites();
 
@@ -194,15 +195,21 @@ export default function Home() {
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-4">
             {filteredSchedules.map(schedule => (
-              <NeighborhoodCard
+              <div
                 key={schedule.neighborhood.id}
-                neighborhood={schedule.neighborhood}
-                outages={schedule.outages}
-                isFavorite={isFavorite(schedule.neighborhood.id)}
-                onToggleFavorite={() => toggleFavorite(schedule.neighborhood.id)}
-                currentHour={currentHour}
-                filterHour={filterHour}
-              />
+                className={expandedCardId === schedule.neighborhood.id ? "lg:col-span-2 xl:col-span-3" : ""}
+              >
+                <NeighborhoodCard
+                  neighborhood={schedule.neighborhood}
+                  outages={schedule.outages}
+                  isFavorite={isFavorite(schedule.neighborhood.id)}
+                  onToggleFavorite={() => toggleFavorite(schedule.neighborhood.id)}
+                  currentHour={currentHour}
+                  filterHour={filterHour}
+                  isExpanded={expandedCardId === schedule.neighborhood.id}
+                  onToggleExpand={() => setExpandedCardId(expandedCardId === schedule.neighborhood.id ? null : schedule.neighborhood.id)}
+                />
+              </div>
             ))}
           </div>
         )}

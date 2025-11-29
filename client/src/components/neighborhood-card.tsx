@@ -1,8 +1,9 @@
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { FavoriteStar } from "./favorite-star";
 import { Timeline } from "./timeline";
-import { MapPin, Zap, ZapOff } from "lucide-react";
+import { MapPin, Zap, ZapOff, Maximize2, Minimize2 } from "lucide-react";
 import type { Neighborhood, Outage } from "@shared/schema";
 import { cn } from "@/lib/utils";
 
@@ -13,6 +14,8 @@ interface NeighborhoodCardProps {
   onToggleFavorite: () => void;
   currentHour: number;
   filterHour?: number | null;
+  isExpanded?: boolean;
+  onToggleExpand?: () => void;
 }
 
 export function NeighborhoodCard({
@@ -22,6 +25,8 @@ export function NeighborhoodCard({
   onToggleFavorite,
   currentHour,
   filterHour,
+  isExpanded = false,
+  onToggleExpand,
 }: NeighborhoodCardProps) {
   const hasCurrentOutage = outages.some(
     outage => currentHour >= outage.startHour && currentHour < outage.endHour
@@ -74,11 +79,29 @@ export function NeighborhoodCard({
             <span>{neighborhood.district}</span>
           </div>
         </div>
-        <FavoriteStar
-          isFavorite={isFavorite}
-          onToggle={onToggleFavorite}
-          neighborhoodName={neighborhood.name}
-        />
+        <div className="flex items-center gap-1">
+          {onToggleExpand && (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={onToggleExpand}
+              data-testid={`button-expand-${neighborhood.id}`}
+              aria-label={isExpanded ? "Réduire" : "Agrandir"}
+              className="hidden lg:flex"
+            >
+              {isExpanded ? (
+                <Minimize2 className="h-4 w-4" />
+              ) : (
+                <Maximize2 className="h-4 w-4" />
+              )}
+            </Button>
+          )}
+          <FavoriteStar
+            isFavorite={isFavorite}
+            onToggle={onToggleFavorite}
+            neighborhoodName={neighborhood.name}
+          />
+        </div>
       </CardHeader>
       <CardContent className="pt-0">
         <div className="mb-3">
