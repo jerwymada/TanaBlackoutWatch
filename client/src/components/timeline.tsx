@@ -132,7 +132,7 @@ export function Timeline({ outages, neighborhoodName, currentHour, filterHour }:
         </div>
       </div>
       <div 
-        className={`w-full ${isDragging ? 'cursor-grabbing' : 'cursor-grab'}`}
+        className="w-full"
         onTouchStart={handleTouchStart} 
         onTouchEnd={handleTouchEnd}
         onMouseDown={handleMouseDown}
@@ -140,13 +140,13 @@ export function Timeline({ outages, neighborhoodName, currentHour, filterHour }:
         onMouseUp={handleMouseUp}
         onMouseLeave={handleMouseUp}
       >
-        <ScrollArea className="w-full whitespace-nowrap cursor-inherit" ref={containerRef}>
-          <div className="flex cursor-inherit pointer-events-none">
+        <ScrollArea className="w-full whitespace-nowrap" ref={containerRef}>
+          <div className="flex pointer-events-none">
             <div className="flex gap-1 px-1 pb-1">
               {hours.map(hour => (
                 <div 
                   key={`today-${hour}`}
-                  className="min-w-[1.875rem] text-center text-xs text-muted-foreground font-medium cursor-inherit"
+                  className="min-w-[1.875rem] text-center text-xs text-muted-foreground font-medium"
                 >
                   {hour.toString().padStart(2, '0')}
                 </div>
@@ -157,14 +157,14 @@ export function Timeline({ outages, neighborhoodName, currentHour, filterHour }:
               {hours.map(hour => (
                 <div 
                   key={`tomorrow-${hour}`}
-                  className="min-w-[1.875rem] text-center text-xs text-muted-foreground font-medium cursor-inherit"
+                  className="min-w-[1.875rem] text-center text-xs text-muted-foreground font-medium"
                 >
                   {hour.toString().padStart(2, '0')}
                 </div>
               ))}
             </div>
           </div>
-          <div className="flex cursor-inherit">
+          <div className="flex">
             <div className="flex gap-1 px-1 pb-2 pointer-events-auto">
               {hours.map(hour => {
                 const outage = getOutageForHour(hour, 0);
