@@ -36,7 +36,7 @@ export function NeighborhoodCard({
   return (
     <Card 
       className={cn(
-        "hover-elevate transition-all duration-200",
+        "hover-elevate transition-all duration-200 select-none",
         isFavorite && "ring-1 ring-favorite/30"
       )}
       data-testid={`card-neighborhood-${neighborhood.id}`}
