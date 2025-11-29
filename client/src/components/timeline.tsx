@@ -63,30 +63,17 @@ export function Timeline({ outages, neighborhoodName, currentHour, filterHour, s
   };
 
   return (
-    <div className="relative w-full" onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
-      {showArrows && (
-        <>
-          <Button
-            size="icon"
-            variant="ghost"
-            className="absolute left-0 top-1/2 -translate-y-1/2 z-10 hidden sm:flex"
-            onClick={() => handleScroll('left')}
-            data-testid="button-timeline-scroll-left"
-          >
-            <ChevronLeft className="h-4 w-4" />
-          </Button>
-          <Button
-            size="icon"
-            variant="ghost"
-            className="absolute right-0 top-1/2 -translate-y-1/2 z-10 hidden sm:flex"
-            onClick={() => handleScroll('right')}
-            data-testid="button-timeline-scroll-right"
-          >
-            <ChevronRight className="h-4 w-4" />
-          </Button>
-        </>
-      )}
-      <ScrollArea className="w-full whitespace-nowrap" ref={containerRef}>
+    <div className="flex items-center gap-2 w-full" onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
+      <Button
+        size="icon"
+        variant="ghost"
+        className={`hidden sm:flex shrink-0 transition-opacity ${showArrows ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
+        onClick={() => handleScroll('left')}
+        data-testid="button-timeline-scroll-left"
+      >
+        <ChevronLeft className="h-4 w-4" />
+      </Button>
+      <ScrollArea className="flex-1 w-full whitespace-nowrap" ref={containerRef}>
         <div className="flex gap-1 px-1 pb-1">
           {hours.map(hour => (
             <div 
@@ -110,6 +97,15 @@ export function Timeline({ outages, neighborhoodName, currentHour, filterHour, s
         </div>
         <ScrollBar orientation="horizontal" />
       </ScrollArea>
+      <Button
+        size="icon"
+        variant="ghost"
+        className={`hidden sm:flex shrink-0 transition-opacity ${showArrows ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
+        onClick={() => handleScroll('right')}
+        data-testid="button-timeline-scroll-right"
+      >
+        <ChevronRight className="h-4 w-4" />
+      </Button>
     </div>
   );
 }
