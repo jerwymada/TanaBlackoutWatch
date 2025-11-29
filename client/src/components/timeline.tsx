@@ -62,6 +62,16 @@ export function Timeline({ outages, neighborhoodName, currentHour, filterHour }:
     );
   };
 
+  const getOutageForHour = (hour: number, day: 0 | 1 = 0) => {
+    const targetDate = day === 0 ? today : tomorrow;
+    const targetHour = hour % 24;
+    return outages.find(outage => 
+      outage.date === targetDate && 
+      targetHour >= outage.startHour && 
+      targetHour < outage.endHour
+    );
+  };
+
   useEffect(() => {
     if (!containerRef.current) return;
     
@@ -156,27 +166,37 @@ export function Timeline({ outages, neighborhoodName, currentHour, filterHour }:
           </div>
           <div className="flex cursor-inherit pointer-events-none">
             <div className="flex gap-1 px-1 pb-2">
-              {hours.map(hour => (
-                <TimelineSlot
-                  key={`today-slot-${hour}`}
-                  hour={hour}
-                  hasOutage={hasOutageAtHour(hour, 0)}
-                  neighborhoodName={neighborhoodName}
-                  isCurrentHour={hour === currentHour}
-                />
-              ))}
+              {hours.map(hour => {
+                const outage = getOutageForHour(hour, 0);
+                return (
+                  <TimelineSlot
+                    key={`today-slot-${hour}`}
+                    hour={hour}
+                    hasOutage={hasOutageAtHour(hour, 0)}
+                    neighborhoodName={neighborhoodName}
+                    isCurrentHour={hour === currentHour}
+                    outageStartHour={outage?.startHour}
+                    outageEndHour={outage?.endHour}
+                  />
+                );
+              })}
             </div>
             <div className="w-px bg-border mx-2" />
             <div className="flex gap-1 px-1 pb-2">
-              {hours.map(hour => (
-                <TimelineSlot
-                  key={`tomorrow-slot-${hour}`}
-                  hour={hour}
-                  hasOutage={hasOutageAtHour(hour, 1)}
-                  neighborhoodName={neighborhoodName}
-                  isCurrentHour={false}
-                />
-              ))}
+              {hours.map(hour => {
+                const outage = getOutageForHour(hour, 1);
+                return (
+                  <TimelineSlot
+                    key={`tomorrow-slot-${hour}`}
+                    hour={hour}
+                    hasOutage={hasOutageAtHour(hour, 1)}
+                    neighborhoodName={neighborhoodName}
+                    isCurrentHour={false}
+                    outageStartHour={outage?.startHour}
+                    outageEndHour={outage?.endHour}
+                  />
+                );
+              })}
             </div>
           </div>
           <ScrollBar orientation="horizontal" />

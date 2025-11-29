@@ -10,10 +10,22 @@ interface TimelineSlotProps {
   hasOutage: boolean;
   neighborhoodName: string;
   isCurrentHour?: boolean;
+  outageStartHour?: number;
+  outageEndHour?: number;
 }
 
-export function TimelineSlot({ hour, hasOutage, neighborhoodName, isCurrentHour }: TimelineSlotProps) {
+export function TimelineSlot({ 
+  hour, 
+  hasOutage, 
+  neighborhoodName, 
+  isCurrentHour,
+  outageStartHour,
+  outageEndHour,
+}: TimelineSlotProps) {
   const formattedHour = `${hour.toString().padStart(2, '0')}:00`;
+  const outageStartFormatted = outageStartHour ? `${outageStartHour.toString().padStart(2, '0')}:00` : '';
+  const outageEndFormatted = outageEndHour ? `${outageEndHour.toString().padStart(2, '0')}:00` : '';
+  const outageDuration = outageEndHour && outageStartHour ? outageEndHour - outageStartHour : 0;
   
   return (
     <Tooltip>
@@ -39,9 +51,23 @@ export function TimelineSlot({ hour, hasOutage, neighborhoodName, isCurrentHour 
         className="bg-foreground text-background px-3 py-2 text-sm"
       >
         <p className="font-medium">{neighborhoodName}</p>
-        <p className="text-xs opacity-80">
-          {formattedHour} - {hasOutage ? 'Coupure programmée' : 'Électricité active'}
-        </p>
+        {hasOutage ? (
+          <>
+            <p className="text-xs opacity-80">
+              Coupure programmée
+            </p>
+            <p className="text-xs opacity-80">
+              {outageStartFormatted} - {outageEndFormatted}
+            </p>
+            <p className="text-xs opacity-80">
+              Durée: {outageDuration}h
+            </p>
+          </>
+        ) : (
+          <p className="text-xs opacity-80">
+            Électricité active à {formattedHour}
+          </p>
+        )}
       </TooltipContent>
     </Tooltip>
   );
