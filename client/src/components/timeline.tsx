@@ -4,6 +4,7 @@ import type { Outage } from "@shared/schema";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { format, addDays } from "date-fns";
 import { fr } from "date-fns/locale";
+import { cn } from "@/lib/utils";
 
 interface TimelineProps {
   outages: Outage[];
@@ -146,7 +147,12 @@ export function Timeline({ outages, neighborhoodName, currentHour, filterHour }:
               {hours.map(hour => (
                 <div 
                   key={`today-${hour}`}
-                  className={`min-w-[1.875rem] text-center text-xs text-muted-foreground font-medium ${hour === currentHour ? 'font-bold text-foreground' : ''}`}
+                  className={cn(
+                    "min-w-[1.875rem] text-center text-xs font-medium",
+                    hour === currentHour 
+                      ? "font-bold text-foreground" 
+                      : "text-muted-foreground"
+                  )}
                 >
                   {hour.toString().padStart(2, '0')}
                 </div>
