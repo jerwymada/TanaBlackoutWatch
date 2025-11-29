@@ -62,17 +62,23 @@ export function Timeline({ outages, neighborhoodName, currentHour, filterHour }:
   };
 
   return (
-    <div className="flex items-center gap-0 w-full" onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
+    <div className="relative w-full" onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
       <Button
         size="icon"
         variant="ghost"
-        className="hidden sm:flex flex-shrink-0 -ml-2"
+        className="absolute left-0 top-1/2 -translate-y-1/2 z-20 hidden sm:flex rounded-md"
+        style={{
+          width: '40.5px',
+          height: '40.5px',
+          background: 'linear-gradient(to left, rgba(255,255,255,0.9) 0%, rgba(255,255,255,0) 100%)',
+          opacity: 0.8
+        }}
         onClick={() => handleScroll('left')}
         data-testid="button-timeline-scroll-left"
       >
         <ChevronLeft className="h-4 w-4" />
       </Button>
-      <ScrollArea className="flex-1 whitespace-nowrap" ref={containerRef}>
+      <ScrollArea className="w-full whitespace-nowrap" ref={containerRef}>
         <div className="flex gap-1 px-1 pb-1">
           {hours.map(hour => (
             <div 
@@ -99,7 +105,13 @@ export function Timeline({ outages, neighborhoodName, currentHour, filterHour }:
       <Button
         size="icon"
         variant="ghost"
-        className="hidden sm:flex flex-shrink-0 -mr-2"
+        className="absolute right-0 top-1/2 -translate-y-1/2 z-20 hidden sm:flex rounded-md"
+        style={{
+          width: '40.5px',
+          height: '40.5px',
+          background: 'linear-gradient(to right, rgba(255,255,255,0.9) 0%, rgba(255,255,255,0) 100%)',
+          opacity: 0.8
+        }}
         onClick={() => handleScroll('right')}
         data-testid="button-timeline-scroll-right"
       >
