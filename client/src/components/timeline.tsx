@@ -28,29 +28,28 @@ export function Timeline({ outages, neighborhoodName, currentHour, filterHour }:
     ? format(addDays(new Date(), 1), 'd MMM', { locale: fr })
     : format(new Date(), 'd MMM', { locale: fr });
   
-  // Utilise Intersection Observer pour détecter quand les heures du lendemain sont visibles
+  // Détecte quand les heures du lendemain sont visibles en vérifiant le scroll position
   useEffect(() => {
-    if (!tomorrowMarkerRef.current || !containerRef.current) return;
+    if (!containerRef.current) return;
     
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            setShowTomorrowDate(true);
-          } else {
-            setShowTomorrowDate(false);
-          }
-        });
-      },
-      {
-        root: containerRef.current?.querySelector('[data-radix-scroll-area-viewport]'),
-        threshold: 0.1,
-      }
-    );
+    const viewport = containerRef.current?.querySelector('[data-radix-scroll-area-viewport]') as HTMLElement;
+    if (!viewport) return;
     
-    observer.observe(tomorrowMarkerRef.current);
+    const handleScroll = () => {
+      if (!tomorrowMarkerRef.current) return;
+      
+      const viewportRect = viewport.getBoundingClientRect();
+      const markerRect = tomorrowMarkerRef.current.getBoundingClientRect();
+      const viewportLeft = viewport.scrollLeft;
+      const markerScrollLeft = tomorrowMarkerRef.current.offsetLeft;
+      
+      // Si le marqueur a dépassé le viewport (scrollé vers la gauche), affiche la date de demain
+      const markerVisible = markerScrollLeft < viewportLeft + viewport.clientWidth && markerScrollLeft >= viewportLeft;
+      setShowTomorrowDate(markerScrollLeft < viewportLeft + viewport.clientWidth * 0.3);
+    };
     
-    return () => observer.disconnect();
+    viewport.addEventListener('scroll', handleScroll);
+    return () => viewport.removeEventListener('scroll', handleScroll);
   }, []);
   
   const hasOutageAtHour = (hour: number, day: 0 | 1 = 0): boolean => {
