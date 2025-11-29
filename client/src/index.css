@@ -43,8 +43,8 @@
   --chart-3: 38 92% 50%;
   --chart-4: 210 65% 45%;
   --chart-5: 280 55% 45%;
-  --outage: 6 78% 57%;
-  --outage-foreground: 0 0% 100%;
+  --outage: 0 100% 84%;
+  --outage-foreground: 6 78% 57%;
   --active: 145 63% 42%;
   --active-foreground: 0 0% 100%;
   --attention: 38 92% 50%;
@@ -134,8 +134,8 @@
   --chart-3: 38 90% 55%;
   --chart-4: 210 70% 65%;
   --chart-5: 280 60% 65%;
-  --outage: 6 78% 57%;
-  --outage-foreground: 0 0% 100%;
+  --outage: 0 100% 84%;
+  --outage-foreground: 6 78% 57%;
   --active: 145 60% 45%;
   --active-foreground: 0 0% 100%;
   --attention: 38 90% 55%;
