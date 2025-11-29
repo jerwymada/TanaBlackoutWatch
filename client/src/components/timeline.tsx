@@ -67,7 +67,7 @@ export function Timeline({ outages, neighborhoodName, currentHour, filterHour, s
       <Button
         size="icon"
         variant="ghost"
-        className={`hidden sm:flex shrink-0 transition-opacity ${showArrows ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
+        className={`hidden sm:flex shrink-0 h-10 transition-opacity ${showArrows ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
         onClick={() => handleScroll('left')}
         data-testid="button-timeline-scroll-left"
       >
@@ -100,7 +100,7 @@ export function Timeline({ outages, neighborhoodName, currentHour, filterHour, s
       <Button
         size="icon"
         variant="ghost"
-        className={`hidden sm:flex shrink-0 transition-opacity ${showArrows ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
+        className={`hidden sm:flex shrink-0 h-10 transition-opacity ${showArrows ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
         onClick={() => handleScroll('right')}
         data-testid="button-timeline-scroll-right"
       >
