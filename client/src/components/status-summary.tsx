@@ -27,19 +27,7 @@ export function StatusSummary({ schedules, currentHour }: StatusSummaryProps) {
   }).length;
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-      <Card className="bg-active/10 border-active/20 dark:bg-active/20">
-        <CardContent className="flex items-center gap-3 p-4">
-          <div className="p-2 rounded-full bg-active/20">
-            <Zap className="h-5 w-5 text-active" />
-          </div>
-          <div>
-            <p className="text-2xl font-bold text-active" data-testid="text-active-count">{activeCount}</p>
-            <p className="text-sm text-muted-foreground">Quartiers actifs</p>
-          </div>
-        </CardContent>
-      </Card>
-
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
       <Card className="bg-outage/10 border-outage/20 dark:bg-outage/20">
         <CardContent className="flex items-center gap-3 p-4">
           <div className="p-2 rounded-full bg-outage/20">
