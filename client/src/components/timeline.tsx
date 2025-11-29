@@ -83,18 +83,18 @@ export function Timeline({ outages, neighborhoodName, currentHour, filterHour }:
       onMouseUp={handleMouseUp}
       onMouseLeave={handleMouseUp}
     >
-      <ScrollArea className="w-full whitespace-nowrap" ref={containerRef}>
-        <div className="flex gap-1 px-1 pb-1">
+      <ScrollArea className="w-full whitespace-nowrap cursor-inherit" ref={containerRef}>
+        <div className="flex gap-1 px-1 pb-1 cursor-inherit pointer-events-none">
           {hours.map(hour => (
             <div 
               key={hour} 
-              className="min-w-[1.875rem] text-center text-xs text-muted-foreground font-medium"
+              className="min-w-[1.875rem] text-center text-xs text-muted-foreground font-medium cursor-inherit"
             >
               {hour.toString().padStart(2, '0')}
             </div>
           ))}
         </div>
-        <div className="flex gap-1 px-1 pb-2">
+        <div className="flex gap-1 px-1 pb-2 cursor-inherit pointer-events-none">
           {hours.map(hour => (
             <TimelineSlot
               key={hour}
