@@ -63,55 +63,53 @@ export function Timeline({ outages, neighborhoodName, currentHour, filterHour, s
   };
 
   return (
-    <div className="flex items-center gap-1 w-full">
+    <div className="relative w-full" onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
       {showArrows && (
-        <Button
-          size="icon"
-          variant="ghost"
-          className="hidden sm:flex shrink-0"
-          onClick={() => handleScroll('left')}
-          data-testid="button-timeline-scroll-left"
-        >
-          <ChevronLeft className="h-4 w-4" />
-        </Button>
+        <>
+          <Button
+            size="icon"
+            variant="ghost"
+            className="absolute left-0 top-1/2 -translate-y-1/2 z-10 hidden sm:flex"
+            onClick={() => handleScroll('left')}
+            data-testid="button-timeline-scroll-left"
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </Button>
+          <Button
+            size="icon"
+            variant="ghost"
+            className="absolute right-0 top-1/2 -translate-y-1/2 z-10 hidden sm:flex"
+            onClick={() => handleScroll('right')}
+            data-testid="button-timeline-scroll-right"
+          >
+            <ChevronRight className="h-4 w-4" />
+          </Button>
+        </>
       )}
-      <div className="flex-1 w-full" onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
-        <ScrollArea className="w-full whitespace-nowrap" ref={containerRef}>
-          <div className="flex gap-1 px-1 pb-1">
-            {hours.map(hour => (
-              <div 
-                key={hour} 
-                className="min-w-[1.875rem] text-center text-xs text-muted-foreground font-medium"
-              >
-                {hour.toString().padStart(2, '0')}
-              </div>
-            ))}
-          </div>
-          <div className="flex gap-1 px-1 pb-2">
-            {hours.map(hour => (
-              <TimelineSlot
-                key={hour}
-                hour={hour}
-                hasOutage={hasOutageAtHour(hour)}
-                neighborhoodName={neighborhoodName}
-                isCurrentHour={hour === currentHour}
-              />
-            ))}
-          </div>
-          <ScrollBar orientation="horizontal" />
-        </ScrollArea>
-      </div>
-      {showArrows && (
-        <Button
-          size="icon"
-          variant="ghost"
-          className="hidden sm:flex shrink-0"
-          onClick={() => handleScroll('right')}
-          data-testid="button-timeline-scroll-right"
-        >
-          <ChevronRight className="h-4 w-4" />
-        </Button>
-      )}
+      <ScrollArea className="w-full whitespace-nowrap" ref={containerRef}>
+        <div className="flex gap-1 px-1 pb-1">
+          {hours.map(hour => (
+            <div 
+              key={hour} 
+              className="min-w-[1.875rem] text-center text-xs text-muted-foreground font-medium"
+            >
+              {hour.toString().padStart(2, '0')}
+            </div>
+          ))}
+        </div>
+        <div className="flex gap-1 px-1 pb-2">
+          {hours.map(hour => (
+            <TimelineSlot
+              key={hour}
+              hour={hour}
+              hasOutage={hasOutageAtHour(hour)}
+              neighborhoodName={neighborhoodName}
+              isCurrentHour={hour === currentHour}
+            />
+          ))}
+        </div>
+        <ScrollBar orientation="horizontal" />
+      </ScrollArea>
     </div>
   );
 }
