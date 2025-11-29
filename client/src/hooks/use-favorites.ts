@@ -3,7 +3,7 @@ import { useState, useEffect, useCallback } from "react";
 const STORAGE_KEY = "delestage-favorites";
 
 export function useFavorites() {
-  const [favorites, setFavorites] = useState<string[]>(() => {
+  const [favorites, setFavorites] = useState<number[]>(() => {
     try {
       const stored = localStorage.getItem(STORAGE_KEY);
       return stored ? JSON.parse(stored) : [];
@@ -20,7 +20,7 @@ export function useFavorites() {
     }
   }, [favorites]);
 
-  const toggleFavorite = useCallback((neighborhoodId: string) => {
+  const toggleFavorite = useCallback((neighborhoodId: number) => {
     setFavorites(prev => {
       if (prev.includes(neighborhoodId)) {
         return prev.filter(id => id !== neighborhoodId);
@@ -29,7 +29,7 @@ export function useFavorites() {
     });
   }, []);
 
-  const isFavorite = useCallback((neighborhoodId: string) => {
+  const isFavorite = useCallback((neighborhoodId: number) => {
     return favorites.includes(neighborhoodId);
   }, [favorites]);
 

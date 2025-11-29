@@ -1,14 +1,27 @@
-import type { Neighborhood, Outage, OutageSchedule, InsertNeighborhood, InsertOutage } from "@shared/schema";
-import { randomUUID } from "crypto";
+import { 
+  neighborhoods, 
+  outages, 
+  type Neighborhood, 
+  type Outage, 
+  type OutageSchedule, 
+  type InsertNeighborhood, 
+  type InsertOutage,
+  type HistoricalStats
+} from "@shared/schema";
+import { db } from "./db";
+import { eq, and, sql, desc, asc, SQL } from "drizzle-orm";
 
 export interface IStorage {
   getNeighborhoods(): Promise<Neighborhood[]>;
-  getNeighborhood(id: string): Promise<Neighborhood | undefined>;
+  getNeighborhood(id: number): Promise<Neighborhood | undefined>;
   createNeighborhood(neighborhood: InsertNeighborhood): Promise<Neighborhood>;
   getOutages(date?: string): Promise<Outage[]>;
-  getOutagesByNeighborhood(neighborhoodId: string, date?: string): Promise<Outage[]>;
+  getOutagesByNeighborhood(neighborhoodId: number, date?: string): Promise<Outage[]>;
   createOutage(outage: InsertOutage): Promise<Outage>;
   getSchedules(date?: string): Promise<OutageSchedule[]>;
+  getHistoricalStats(startDate?: string, endDate?: string): Promise<HistoricalStats>;
+  getAvailableDates(): Promise<string[]>;
+  seedData(): Promise<void>;
 }
 
 const ANTANANARIVO_NEIGHBORHOODS: InsertNeighborhood[] = [
@@ -32,136 +45,196 @@ const ANTANANARIVO_NEIGHBORHOODS: InsertNeighborhood[] = [
   { name: "67 Ha", district: "6ème Arrondissement" },
 ];
 
-function generateOutageSchedule(neighborhoodId: string, index: number): InsertOutage[] {
-  const outages: InsertOutage[] = [];
-  const today = new Date().toISOString().split('T')[0];
-  
-  const patterns = [
-    [{ start: 6, end: 10 }],
-    [{ start: 8, end: 12 }],
-    [{ start: 10, end: 14 }],
-    [{ start: 12, end: 16 }],
-    [{ start: 14, end: 18 }],
-    [{ start: 16, end: 20 }],
-    [{ start: 6, end: 9 }, { start: 18, end: 21 }],
-    [{ start: 7, end: 11 }, { start: 15, end: 18 }],
-    [{ start: 9, end: 13 }],
-    [{ start: 11, end: 15 }],
-    [{ start: 5, end: 8 }, { start: 17, end: 20 }],
-    [{ start: 6, end: 10 }, { start: 14, end: 17 }],
-    [],
-    [{ start: 8, end: 11 }],
-    [{ start: 13, end: 17 }],
-    [{ start: 7, end: 10 }, { start: 16, end: 19 }],
-    [{ start: 9, end: 12 }],
-    [{ start: 15, end: 19 }],
-  ];
+const OUTAGE_PATTERNS = [
+  [{ start: 6, end: 10 }],
+  [{ start: 8, end: 12 }],
+  [{ start: 10, end: 14 }],
+  [{ start: 12, end: 16 }],
+  [{ start: 14, end: 18 }],
+  [{ start: 16, end: 20 }],
+  [{ start: 6, end: 9 }, { start: 18, end: 21 }],
+  [{ start: 7, end: 11 }, { start: 15, end: 18 }],
+  [{ start: 9, end: 13 }],
+  [{ start: 11, end: 15 }],
+  [{ start: 5, end: 8 }, { start: 17, end: 20 }],
+  [{ start: 6, end: 10 }, { start: 14, end: 17 }],
+  [],
+  [{ start: 8, end: 11 }],
+  [{ start: 13, end: 17 }],
+  [{ start: 7, end: 10 }, { start: 16, end: 19 }],
+  [{ start: 9, end: 12 }],
+  [{ start: 15, end: 19 }],
+];
 
-  const pattern = patterns[index % patterns.length];
-  
-  for (const slot of pattern) {
-    outages.push({
-      neighborhoodId,
-      date: today,
-      startHour: slot.start,
-      endHour: slot.end,
-    });
-  }
-
-  return outages;
-}
-
-export class MemStorage implements IStorage {
-  private neighborhoods: Map<string, Neighborhood>;
-  private outages: Map<string, Outage>;
-
-  constructor() {
-    this.neighborhoods = new Map();
-    this.outages = new Map();
-    this.initializeData();
-  }
-
-  private initializeData() {
-    ANTANANARIVO_NEIGHBORHOODS.forEach((n, index) => {
-      const neighborhood: Neighborhood = {
-        id: randomUUID(),
-        name: n.name,
-        district: n.district,
-      };
-      this.neighborhoods.set(neighborhood.id, neighborhood);
-
-      const outageSlots = generateOutageSchedule(neighborhood.id, index);
-      outageSlots.forEach(slot => {
-        const outage: Outage = {
-          id: randomUUID(),
-          neighborhoodId: slot.neighborhoodId,
-          date: slot.date,
-          startHour: slot.startHour,
-          endHour: slot.endHour,
-        };
-        this.outages.set(outage.id, outage);
-      });
-    });
-  }
-
+export class DatabaseStorage implements IStorage {
   async getNeighborhoods(): Promise<Neighborhood[]> {
-    return Array.from(this.neighborhoods.values()).sort((a, b) => 
-      a.name.localeCompare(b.name)
-    );
+    const results = await db.select().from(neighborhoods).orderBy(asc(neighborhoods.name));
+    return results;
   }
 
-  async getNeighborhood(id: string): Promise<Neighborhood | undefined> {
-    return this.neighborhoods.get(id);
+  async getNeighborhood(id: number): Promise<Neighborhood | undefined> {
+    const [neighborhood] = await db.select().from(neighborhoods).where(eq(neighborhoods.id, id));
+    return neighborhood || undefined;
   }
 
   async createNeighborhood(insertNeighborhood: InsertNeighborhood): Promise<Neighborhood> {
-    const id = randomUUID();
-    const neighborhood: Neighborhood = { ...insertNeighborhood, id };
-    this.neighborhoods.set(id, neighborhood);
+    const [neighborhood] = await db.insert(neighborhoods).values(insertNeighborhood).returning();
     return neighborhood;
   }
 
   async getOutages(date?: string): Promise<Outage[]> {
-    const outages = Array.from(this.outages.values());
     if (date) {
-      return outages.filter(o => o.date === date);
+      return await db.select().from(outages).where(eq(outages.date, date));
     }
-    return outages;
+    return await db.select().from(outages);
   }
 
-  async getOutagesByNeighborhood(neighborhoodId: string, date?: string): Promise<Outage[]> {
-    const outages = Array.from(this.outages.values()).filter(
-      o => o.neighborhoodId === neighborhoodId
-    );
+  async getOutagesByNeighborhood(neighborhoodId: number, date?: string): Promise<Outage[]> {
     if (date) {
-      return outages.filter(o => o.date === date);
+      return await db.select().from(outages).where(
+        and(eq(outages.neighborhoodId, neighborhoodId), eq(outages.date, date))
+      );
     }
-    return outages;
+    return await db.select().from(outages).where(eq(outages.neighborhoodId, neighborhoodId));
   }
 
   async createOutage(insertOutage: InsertOutage): Promise<Outage> {
-    const id = randomUUID();
-    const outage: Outage = { ...insertOutage, id };
-    this.outages.set(id, outage);
+    const [outage] = await db.insert(outages).values(insertOutage).returning();
     return outage;
   }
 
   async getSchedules(date?: string): Promise<OutageSchedule[]> {
-    const neighborhoods = await this.getNeighborhoods();
+    const allNeighborhoods = await this.getNeighborhoods();
     const targetDate = date || new Date().toISOString().split('T')[0];
     
     const schedules: OutageSchedule[] = [];
     
-    for (const neighborhood of neighborhoods) {
-      const outages = await this.getOutagesByNeighborhood(neighborhood.id, targetDate);
+    for (const neighborhood of allNeighborhoods) {
+      const neighborhoodOutages = await this.getOutagesByNeighborhood(neighborhood.id, targetDate);
       schedules.push({
         neighborhood,
-        outages: outages.sort((a, b) => a.startHour - b.startHour),
+        outages: neighborhoodOutages.sort((a, b) => a.startHour - b.startHour),
       });
     }
     
     return schedules;
   }
+
+  async getHistoricalStats(startDate?: string, endDate?: string): Promise<HistoricalStats> {
+    const conditions: SQL[] = [];
+    
+    if (startDate) {
+      conditions.push(sql`${outages.date} >= ${startDate}`);
+    }
+    if (endDate) {
+      conditions.push(sql`${outages.date} <= ${endDate}`);
+    }
+    
+    const filteredOutages = conditions.length > 0
+      ? await db.select({
+          date: outages.date,
+          neighborhoodId: outages.neighborhoodId,
+          startHour: outages.startHour,
+          endHour: outages.endHour,
+        }).from(outages).where(and(...conditions))
+      : await db.select({
+          date: outages.date,
+          neighborhoodId: outages.neighborhoodId,
+          startHour: outages.startHour,
+          endHour: outages.endHour,
+        }).from(outages);
+
+    const totalOutageHours = filteredOutages.reduce((sum, o) => sum + (o.endHour - o.startHour), 0);
+    
+    const dailyMap = new Map<string, { totalOutages: number; totalHours: number }>();
+    for (const o of filteredOutages) {
+      const existing = dailyMap.get(o.date) || { totalOutages: 0, totalHours: 0 };
+      existing.totalOutages += 1;
+      existing.totalHours += o.endHour - o.startHour;
+      dailyMap.set(o.date, existing);
+    }
+    
+    const dailyStats = Array.from(dailyMap.entries())
+      .map(([date, stats]) => ({ date, ...stats }))
+      .sort((a, b) => a.date.localeCompare(b.date));
+    
+    const averageDailyOutages = dailyStats.length > 0 
+      ? dailyStats.reduce((sum, d) => sum + d.totalOutages, 0) / dailyStats.length 
+      : 0;
+    
+    const neighborhoodMap = new Map<number, number>();
+    for (const o of filteredOutages) {
+      const existing = neighborhoodMap.get(o.neighborhoodId) || 0;
+      neighborhoodMap.set(o.neighborhoodId, existing + (o.endHour - o.startHour));
+    }
+    
+    const allNeighborhoods = await this.getNeighborhoods();
+    const neighborhoodRankings = Array.from(neighborhoodMap.entries())
+      .map(([neighborhoodId, totalOutageHours]) => ({
+        neighborhoodId,
+        neighborhoodName: allNeighborhoods.find(n => n.id === neighborhoodId)?.name || 'Unknown',
+        totalOutageHours,
+      }))
+      .sort((a, b) => b.totalOutageHours - a.totalOutageHours);
+
+    return {
+      totalOutageHours,
+      averageDailyOutages,
+      neighborhoodRankings,
+      dailyStats,
+    };
+  }
+
+  async getAvailableDates(): Promise<string[]> {
+    const results = await db
+      .selectDistinct({ date: outages.date })
+      .from(outages)
+      .orderBy(desc(outages.date));
+    return results.map(r => r.date);
+  }
+
+  async seedData(): Promise<void> {
+    const existingNeighborhoods = await this.getNeighborhoods();
+    if (existingNeighborhoods.length > 0) {
+      console.log("Data already seeded, skipping...");
+      return;
+    }
+
+    console.log("Seeding database with initial data...");
+    
+    const createdNeighborhoods: Neighborhood[] = [];
+    for (const n of ANTANANARIVO_NEIGHBORHOODS) {
+      const neighborhood = await this.createNeighborhood(n);
+      createdNeighborhoods.push(neighborhood);
+    }
+
+    const today = new Date();
+    const dates: string[] = [];
+    for (let i = -14; i <= 7; i++) {
+      const date = new Date(today);
+      date.setDate(date.getDate() + i);
+      dates.push(date.toISOString().split('T')[0]);
+    }
+
+    for (const dateStr of dates) {
+      for (let i = 0; i < createdNeighborhoods.length; i++) {
+        const neighborhood = createdNeighborhoods[i];
+        const patternIndex = (i + dates.indexOf(dateStr)) % OUTAGE_PATTERNS.length;
+        const pattern = OUTAGE_PATTERNS[patternIndex];
+        
+        for (const slot of pattern) {
+          await this.createOutage({
+            neighborhoodId: neighborhood.id,
+            date: dateStr,
+            startHour: slot.start,
+            endHour: slot.end,
+          });
+        }
+      }
+    }
+
+    console.log(`Seeded ${createdNeighborhoods.length} neighborhoods with outages for ${dates.length} days`);
+  }
 }
 
-export const storage = new MemStorage();
+export const storage = new DatabaseStorage();

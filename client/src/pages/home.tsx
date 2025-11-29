@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Zap, RefreshCw } from "lucide-react";
+import { Link } from "wouter";
+import { Zap, RefreshCw, BarChart2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { FilterControls } from "@/components/filter-controls";
@@ -113,6 +114,16 @@ export default function Home() {
                 schedules={schedules || []} 
                 disabled={isLoading || isError}
               />
+              <Link href="/stats">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  data-testid="button-stats"
+                  aria-label="Voir les statistiques"
+                >
+                  <BarChart2 className="h-5 w-5" />
+                </Button>
+              </Link>
               <Button
                 variant="ghost"
                 size="icon"
