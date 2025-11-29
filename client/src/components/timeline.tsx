@@ -63,16 +63,18 @@ export function Timeline({ outages, neighborhoodName, currentHour, filterHour }:
 
   return (
     <div className="relative w-full" onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
-      <Button
-        size="icon"
-        variant="ghost"
-        className="absolute left-0 top-1/2 -translate-y-1/2 z-20 hidden sm:flex rounded-md"
+      <div
+        className="absolute left-0 top-1/2 -translate-y-1/2 z-20 hidden sm:flex items-center justify-center pointer-events-none rounded-md"
         style={{
           width: '40.5px',
           height: '40.5px',
-          background: 'linear-gradient(to left, rgba(255,255,255,0.9) 0%, rgba(255,255,255,0) 100%)',
-          opacity: 0.8
+          background: 'linear-gradient(to left, rgba(255,255,255,0.7) 0%, rgba(255,255,255,0) 100%)',
         }}
+      />
+      <Button
+        size="icon"
+        variant="ghost"
+        className="absolute left-0 top-1/2 -translate-y-1/2 z-20 hidden sm:flex"
         onClick={() => handleScroll('left')}
         data-testid="button-timeline-scroll-left"
       >
@@ -102,16 +104,18 @@ export function Timeline({ outages, neighborhoodName, currentHour, filterHour }:
         </div>
         <ScrollBar orientation="horizontal" />
       </ScrollArea>
-      <Button
-        size="icon"
-        variant="ghost"
-        className="absolute right-0 top-1/2 -translate-y-1/2 z-20 hidden sm:flex rounded-md"
+      <div
+        className="absolute right-0 top-1/2 -translate-y-1/2 z-20 hidden sm:flex items-center justify-center pointer-events-none rounded-md"
         style={{
           width: '40.5px',
           height: '40.5px',
-          background: 'linear-gradient(to right, rgba(255,255,255,0.9) 0%, rgba(255,255,255,0) 100%)',
-          opacity: 0.8
+          background: 'linear-gradient(to right, rgba(255,255,255,0.7) 0%, rgba(255,255,255,0) 100%)',
         }}
+      />
+      <Button
+        size="icon"
+        variant="ghost"
+        className="absolute right-0 top-1/2 -translate-y-1/2 z-20 hidden sm:flex"
         onClick={() => handleScroll('right')}
         data-testid="button-timeline-scroll-right"
       >
