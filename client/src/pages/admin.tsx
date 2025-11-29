@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Link } from "wouter";
 import { ArrowLeft, Plus, Trash2 } from "lucide-react";
@@ -9,7 +9,8 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
-import type { Neighborhood } from "@shared/schema";
+import { StatusSummary } from "@/components/status-summary";
+import type { Neighborhood, OutageSchedule } from "@shared/schema";
 
 const DISTRICTS = [
   "1er Arrondissement",
@@ -23,6 +24,7 @@ const DISTRICTS = [
 export default function Admin() {
   const { toast } = useToast();
   const [tab, setTab] = useState<"outages" | "neighborhoods">("outages");
+  const [currentHour, setCurrentHour] = useState(() => new Date().getHours());
 
   // Outage form state
   const [outageDate, setOutageDate] = useState(new Date().toISOString().split("T")[0]);
@@ -35,8 +37,19 @@ export default function Admin() {
   const [neighborhoodName, setNeighborhoodName] = useState("");
   const [district, setDistrict] = useState(DISTRICTS[0]);
 
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentHour(new Date().getHours());
+    }, 60000);
+    return () => clearInterval(interval);
+  }, []);
+
   const { data: neighborhoods = [] } = useQuery<Neighborhood[]>({
     queryKey: ["/api/neighborhoods"],
+  });
+
+  const { data: schedules = [] } = useQuery<OutageSchedule[]>({
+    queryKey: ["/api/schedules"],
   });
 
   const createOutageMutation = useMutation({
@@ -132,6 +145,10 @@ export default function Admin() {
       </header>
 
       <main className="container mx-auto px-4 py-6">
+        <div className="mb-6">
+          <StatusSummary schedules={schedules} currentHour={currentHour} />
+        </div>
+
         <div className="flex gap-2 mb-6">
           <Button
             variant={tab === "outages" ? "default" : "outline"}
