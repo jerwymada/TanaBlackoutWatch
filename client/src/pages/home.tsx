@@ -20,6 +20,7 @@ export default function Home() {
   const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
   const [currentHour, setCurrentHour] = useState(() => new Date().getHours());
   const [expandedCardId, setExpandedCardId] = useState<number | null>(null);
+  const [displayCount, setDisplayCount] = useState(15);
   
   const { favorites, toggleFavorite, isFavorite } = useFavorites();
 
@@ -29,6 +30,10 @@ export default function Home() {
     }, 60000);
     return () => clearInterval(interval);
   }, []);
+
+  useEffect(() => {
+    setDisplayCount(15);
+  }, [searchQuery, selectedHour, showFavoritesOnly]);
 
   const { data: schedules, isLoading, isError, refetch, isFetching } = useQuery<OutageSchedule[]>({
     queryKey: ["/api/schedules"],
@@ -174,25 +179,39 @@ export default function Home() {
             <EmptyState type="no-results" onClearFilters={clearFilters} />
           )
         ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-4">
-            {filteredSchedules.map(schedule => (
-              <div
-                key={schedule.neighborhood.id}
-                className={expandedCardId === schedule.neighborhood.id ? "lg:col-span-2 xl:col-span-3" : ""}
-              >
-                <NeighborhoodCard
-                  neighborhood={schedule.neighborhood}
-                  outages={schedule.outages}
-                  isFavorite={isFavorite(schedule.neighborhood.id)}
-                  onToggleFavorite={() => toggleFavorite(schedule.neighborhood.id)}
-                  currentHour={currentHour}
-                  filterHour={filterHour}
-                  isExpanded={expandedCardId === schedule.neighborhood.id}
-                  onToggleExpand={() => setExpandedCardId(expandedCardId === schedule.neighborhood.id ? null : schedule.neighborhood.id)}
-                />
+          <>
+            <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-4">
+              {filteredSchedules.slice(0, displayCount).map(schedule => (
+                <div
+                  key={schedule.neighborhood.id}
+                  className={expandedCardId === schedule.neighborhood.id ? "lg:col-span-2 xl:col-span-3" : ""}
+                >
+                  <NeighborhoodCard
+                    neighborhood={schedule.neighborhood}
+                    outages={schedule.outages}
+                    isFavorite={isFavorite(schedule.neighborhood.id)}
+                    onToggleFavorite={() => toggleFavorite(schedule.neighborhood.id)}
+                    currentHour={currentHour}
+                    filterHour={filterHour}
+                    isExpanded={expandedCardId === schedule.neighborhood.id}
+                    onToggleExpand={() => setExpandedCardId(expandedCardId === schedule.neighborhood.id ? null : schedule.neighborhood.id)}
+                  />
+                </div>
+              ))}
+            </div>
+
+            {displayCount < filteredSchedules.length && (
+              <div className="flex justify-center pt-4">
+                <Button
+                  variant="outline"
+                  onClick={() => setDisplayCount(displayCount + 15)}
+                  data-testid="button-load-more"
+                >
+                  Afficher plus
+                </Button>
               </div>
-            ))}
-          </div>
+            )}
+          </>
         )}
 
         <div className="text-center text-xs text-muted-foreground pt-4 border-t">
