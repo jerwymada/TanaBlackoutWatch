@@ -41,7 +41,7 @@ export function NeighborhoodCard({
   return (
     <Card 
       className={cn(
-        "hover-elevate transition-all duration-200 select-none",
+        "hover-elevate transition-all duration-200 select-none group",
         isFavorite && "ring-1 ring-favorite/30"
       )}
       data-testid={`card-neighborhood-${neighborhood.id}`}
@@ -87,7 +87,7 @@ export function NeighborhoodCard({
               onClick={onToggleExpand}
               data-testid={`button-expand-${neighborhood.id}`}
               aria-label={isExpanded ? "Réduire" : "Agrandir"}
-              className="!flex"
+              className="hidden group-hover:flex"
             >
               {isExpanded ? (
                 <Minimize2 className="h-4 w-4" />
