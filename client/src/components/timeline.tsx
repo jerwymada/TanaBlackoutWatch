@@ -11,7 +11,7 @@ interface TimelineProps {
 }
 
 export function Timeline({ outages, neighborhoodName, currentHour, filterHour }: TimelineProps) {
-  const scrollRef = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   const hours = Array.from({ length: 24 }, (_, i) => i);
   
   const hasOutageAtHour = (hour: number): boolean => {
@@ -19,26 +19,26 @@ export function Timeline({ outages, neighborhoodName, currentHour, filterHour }:
   };
 
   useEffect(() => {
-    const performScroll = () => {
-      if (scrollRef.current?.querySelector('[role="region"]')) {
-        const scrollArea = scrollRef.current.querySelector('[style*="overflow"]') as HTMLElement;
-        if (scrollArea) {
-          const hourToScroll = filterHour !== null && filterHour !== undefined ? filterHour : currentHour;
-          const slotWidth = 60;
-          const gap = 4;
-          const containerWidth = scrollArea.offsetWidth;
-          const scrollPosition = Math.max(0, (hourToScroll * (slotWidth + gap)) - (containerWidth / 2) + (slotWidth / 2));
-          scrollArea.scrollTo({ left: scrollPosition, behavior: 'smooth' });
-        }
-      }
-    };
+    if (!containerRef.current) return;
     
-    requestAnimationFrame(performScroll);
+    const timer = setTimeout(() => {
+      const scrollViewport = containerRef.current?.querySelector('[data-radix-scroll-area-viewport]') as HTMLElement;
+      if (scrollViewport) {
+        const hourToScroll = filterHour !== null && filterHour !== undefined ? filterHour : currentHour;
+        const slotWidth = 60;
+        const gap = 4;
+        const containerWidth = scrollViewport.clientWidth;
+        const scrollPosition = Math.max(0, (hourToScroll * (slotWidth + gap)) - (containerWidth / 2) + (slotWidth / 2));
+        scrollViewport.scrollLeft = scrollPosition;
+      }
+    }, 50);
+    
+    return () => clearTimeout(timer);
   }, [currentHour, filterHour]);
 
   return (
     <div className="w-full">
-      <ScrollArea className="w-full whitespace-nowrap" ref={scrollRef}>
+      <ScrollArea className="w-full whitespace-nowrap" ref={containerRef}>
         <div className="flex gap-1 px-1 pb-1">
           {hours.map(hour => (
             <div 
