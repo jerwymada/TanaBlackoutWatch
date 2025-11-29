@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { FavoriteStar } from "./favorite-star";
@@ -23,6 +24,8 @@ export function NeighborhoodCard({
   currentHour,
   filterHour,
 }: NeighborhoodCardProps) {
+  const [showArrows, setShowArrows] = useState(false);
+  
   const hasCurrentOutage = outages.some(
     outage => currentHour >= outage.startHour && currentHour < outage.endHour
   );
@@ -40,6 +43,8 @@ export function NeighborhoodCard({
         isFavorite && "ring-1 ring-favorite/30"
       )}
       data-testid={`card-neighborhood-${neighborhood.id}`}
+      onMouseEnter={() => setShowArrows(true)}
+      onMouseLeave={() => setShowArrows(false)}
     >
       <CardHeader className="flex flex-row items-start justify-between gap-2 pb-3 space-y-0">
         <div className="flex-1 min-w-0">
@@ -86,6 +91,7 @@ export function NeighborhoodCard({
             neighborhoodName={neighborhood.name}
             currentHour={currentHour}
             filterHour={filterHour}
+            showArrows={showArrows}
           />
         </div>
         <div className="flex items-center gap-4 text-sm text-muted-foreground flex-wrap">

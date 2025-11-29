@@ -10,14 +10,12 @@ interface TimelineProps {
   neighborhoodName: string;
   currentHour: number;
   filterHour?: number | null;
-  onScroll?: (direction: string) => void;
+  showArrows?: boolean;
 }
 
-export function Timeline({ outages, neighborhoodName, currentHour, filterHour, onScroll }: TimelineProps) {
+export function Timeline({ outages, neighborhoodName, currentHour, filterHour, showArrows = false }: TimelineProps) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const viewportRef = useRef<HTMLElement>(null);
   const [touchStart, setTouchStart] = useState(0);
-  const [showArrows, setShowArrows] = useState(false);
   const hours = Array.from({ length: 24 }, (_, i) => i);
   
   const hasOutageAtHour = (hour: number): boolean => {
@@ -30,7 +28,6 @@ export function Timeline({ outages, neighborhoodName, currentHour, filterHour, o
     const timer = setTimeout(() => {
       const scrollViewport = containerRef.current?.querySelector('[data-radix-scroll-area-viewport]') as HTMLElement;
       if (scrollViewport) {
-        viewportRef.current = scrollViewport;
         const hourToScroll = filterHour !== null && filterHour !== undefined ? filterHour : currentHour;
         const slotWidth = 30;
         const gap = 4;
@@ -51,14 +48,14 @@ export function Timeline({ outages, neighborhoodName, currentHour, filterHour, o
     const touchEnd = e.changedTouches[0].clientX;
     const diff = touchStart - touchEnd;
     
-    const viewport = viewportRef.current;
+    const viewport = containerRef.current?.querySelector('[data-radix-scroll-area-viewport]') as HTMLElement;
     if (viewport && Math.abs(diff) > 10) {
       viewport.scrollLeft += diff;
     }
   };
 
   const handleScroll = (direction: string) => {
-    const viewport = viewportRef.current;
+    const viewport = containerRef.current?.querySelector('[data-radix-scroll-area-viewport]') as HTMLElement;
     if (viewport) {
       const scrollAmount = 100;
       viewport.scrollLeft += direction === 'left' ? -scrollAmount : scrollAmount;
@@ -66,7 +63,7 @@ export function Timeline({ outages, neighborhoodName, currentHour, filterHour, o
   };
 
   return (
-    <div className="relative w-full" onMouseEnter={() => setShowArrows(true)} onMouseLeave={() => setShowArrows(false)}>
+    <div className="relative w-full">
       {showArrows && (
         <>
           <Button
