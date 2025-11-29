@@ -87,7 +87,7 @@ export function NeighborhoodCard({
               onClick={onToggleExpand}
               data-testid={`button-expand-${neighborhood.id}`}
               aria-label={isExpanded ? "Réduire" : "Agrandir"}
-              className="hidden lg:flex"
+              className="lg:flex"
             >
               {isExpanded ? (
                 <Minimize2 className="h-4 w-4" />
