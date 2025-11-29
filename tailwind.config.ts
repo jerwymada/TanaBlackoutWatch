@@ -11,6 +11,21 @@ export default {
         sm: ".1875rem", /* 3px */
       },
       colors: {
+        outage: {
+          DEFAULT: "hsl(var(--outage) / <alpha-value>)",
+          foreground: "hsl(var(--outage-foreground) / <alpha-value>)",
+        },
+        active: {
+          DEFAULT: "hsl(var(--active) / <alpha-value>)",
+          foreground: "hsl(var(--active-foreground) / <alpha-value>)",
+        },
+        attention: {
+          DEFAULT: "hsl(var(--attention) / <alpha-value>)",
+          foreground: "hsl(var(--attention-foreground) / <alpha-value>)",
+        },
+        favorite: {
+          DEFAULT: "hsl(var(--favorite) / <alpha-value>)",
+        },
         // Flat / base colors (regular buttons)
         background: "hsl(var(--background) / <alpha-value>)",
         foreground: "hsl(var(--foreground) / <alpha-value>)",
@@ -83,7 +98,7 @@ export default {
         },
       },
       fontFamily: {
-        sans: ["var(--font-sans)"],
+        sans: ["Inter", "Roboto", "var(--font-sans)"],
         serif: ["var(--font-serif)"],
         mono: ["var(--font-mono)"],
       },

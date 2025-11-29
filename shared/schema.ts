@@ -1,18 +1,35 @@
-import { sql } from "drizzle-orm";
-import { pgTable, text, varchar } from "drizzle-orm/pg-core";
-import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
-export const users = pgTable("users", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  username: text("username").notNull().unique(),
-  password: text("password").notNull(),
+export interface Neighborhood {
+  id: string;
+  name: string;
+  district: string;
+}
+
+export interface Outage {
+  id: string;
+  neighborhoodId: string;
+  date: string;
+  startHour: number;
+  endHour: number;
+}
+
+export interface OutageSchedule {
+  neighborhood: Neighborhood;
+  outages: Outage[];
+}
+
+export const insertNeighborhoodSchema = z.object({
+  name: z.string().min(1),
+  district: z.string().min(1),
 });
 
-export const insertUserSchema = createInsertSchema(users).pick({
-  username: true,
-  password: true,
+export const insertOutageSchema = z.object({
+  neighborhoodId: z.string(),
+  date: z.string(),
+  startHour: z.number().min(0).max(23),
+  endHour: z.number().min(0).max(24),
 });
 
-export type InsertUser = z.infer<typeof insertUserSchema>;
-export type User = typeof users.$inferSelect;
+export type InsertNeighborhood = z.infer<typeof insertNeighborhoodSchema>;
+export type InsertOutage = z.infer<typeof insertOutageSchema>;

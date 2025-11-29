@@ -1,0 +1,106 @@
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { FavoriteStar } from "./favorite-star";
+import { Timeline } from "./timeline";
+import { MapPin, Zap, ZapOff } from "lucide-react";
+import type { Neighborhood, Outage } from "@shared/schema";
+import { cn } from "@/lib/utils";
+
+interface NeighborhoodCardProps {
+  neighborhood: Neighborhood;
+  outages: Outage[];
+  isFavorite: boolean;
+  onToggleFavorite: () => void;
+  currentHour: number;
+  filterHour?: number | null;
+}
+
+export function NeighborhoodCard({
+  neighborhood,
+  outages,
+  isFavorite,
+  onToggleFavorite,
+  currentHour,
+  filterHour,
+}: NeighborhoodCardProps) {
+  const hasCurrentOutage = outages.some(
+    outage => currentHour >= outage.startHour && currentHour < outage.endHour
+  );
+
+  const nextOutage = outages.find(outage => outage.startHour > currentHour);
+  const totalOutageHours = outages.reduce(
+    (sum, outage) => sum + (outage.endHour - outage.startHour), 
+    0
+  );
+
+  return (
+    <Card 
+      className={cn(
+        "hover-elevate transition-all duration-200",
+        isFavorite && "ring-1 ring-favorite/30"
+      )}
+      data-testid={`card-neighborhood-${neighborhood.id}`}
+    >
+      <CardHeader className="flex flex-row items-start justify-between gap-2 pb-3 space-y-0">
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 flex-wrap">
+            <h3 className="font-semibold text-lg leading-tight truncate" data-testid={`text-neighborhood-name-${neighborhood.id}`}>
+              {neighborhood.name}
+            </h3>
+            <Badge 
+              variant={hasCurrentOutage ? "destructive" : "secondary"}
+              className={cn(
+                "shrink-0",
+                !hasCurrentOutage && "bg-active/20 text-active hover:bg-active/30 dark:bg-active/30"
+              )}
+              data-testid={`badge-status-${neighborhood.id}`}
+            >
+              {hasCurrentOutage ? (
+                <>
+                  <ZapOff className="h-3 w-3 mr-1" />
+                  Coupure
+                </>
+              ) : (
+                <>
+                  <Zap className="h-3 w-3 mr-1" />
+                  Actif
+                </>
+              )}
+            </Badge>
+          </div>
+          <div className="flex items-center gap-1 text-sm text-muted-foreground mt-1">
+            <MapPin className="h-3.5 w-3.5" />
+            <span>{neighborhood.district}</span>
+          </div>
+        </div>
+        <FavoriteStar
+          isFavorite={isFavorite}
+          onToggle={onToggleFavorite}
+          neighborhoodName={neighborhood.name}
+        />
+      </CardHeader>
+      <CardContent className="pt-0">
+        <div className="mb-3">
+          <Timeline 
+            outages={outages} 
+            neighborhoodName={neighborhood.name}
+            currentHour={currentHour}
+            filterHour={filterHour}
+          />
+        </div>
+        <div className="flex items-center gap-4 text-sm text-muted-foreground flex-wrap">
+          <div className="flex items-center gap-1.5">
+            <div className="w-3 h-3 rounded-sm bg-outage" />
+            <span>{totalOutageHours}h de coupure</span>
+          </div>
+          {nextOutage && !hasCurrentOutage && (
+            <div className="flex items-center gap-1.5">
+              <div className="w-3 h-3 rounded-sm bg-attention" />
+              <span>Prochaine: {nextOutage.startHour.toString().padStart(2, '0')}h</span>
+            </div>
+          )}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
