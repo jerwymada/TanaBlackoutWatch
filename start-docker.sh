@@ -33,3 +33,4 @@ echo "1. Vérifier que Docker Desktop est en cours d'exécution"
 echo "2. Attendre qu'il soit complètement démarré (icône dans la barre des tâches)"
 echo "3. Réessayer: npm run db:start"
 
+

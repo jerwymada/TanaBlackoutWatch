@@ -65,3 +65,4 @@ Le serveur devrait démarrer sur http://localhost:5000
 - Vérifiez les logs : `docker-compose logs postgres`
 - Redémarrez la base de données : `npm run db:reset`
 
+
