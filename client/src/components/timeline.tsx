@@ -1,4 +1,4 @@
-import { useRef, useEffect } from "react";
+import { useRef, useEffect, useState } from "react";
 import { TimelineSlot } from "./timeline-slot";
 import type { Outage } from "@shared/schema";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
@@ -12,6 +12,7 @@ interface TimelineProps {
 
 export function Timeline({ outages, neighborhoodName, currentHour, filterHour }: TimelineProps) {
   const containerRef = useRef<HTMLDivElement>(null);
+  const [touchStart, setTouchStart] = useState(0);
   const hours = Array.from({ length: 24 }, (_, i) => i);
   
   const hasOutageAtHour = (hour: number): boolean => {
@@ -36,8 +37,22 @@ export function Timeline({ outages, neighborhoodName, currentHour, filterHour }:
     return () => clearTimeout(timer);
   }, [currentHour, filterHour]);
 
+  const handleTouchStart = (e: React.TouchEvent) => {
+    setTouchStart(e.touches[0].clientX);
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    const touchEnd = e.changedTouches[0].clientX;
+    const diff = touchStart - touchEnd;
+    
+    const scrollViewport = containerRef.current?.querySelector('[data-radix-scroll-area-viewport]') as HTMLElement;
+    if (scrollViewport && Math.abs(diff) > 10) {
+      scrollViewport.scrollLeft += diff * 0.5;
+    }
+  };
+
   return (
-    <div className="w-full">
+    <div className="w-full" onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
       <ScrollArea className="w-full whitespace-nowrap" ref={containerRef}>
         <div className="flex gap-1 px-1 pb-1">
           {hours.map(hour => (
