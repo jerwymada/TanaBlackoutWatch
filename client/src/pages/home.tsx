@@ -145,7 +145,7 @@ export default function Home() {
             </span>
           </div>
           <div className="text-sm font-medium">
-            Heure actuelle: <span className="text-foreground">{currentHour.toString().padStart(2, '0')}:00</span>
+            Heure actuelle: <span className="text-foreground font-bold">{currentHour.toString().padStart(2, '0')}:00</span>
           </div>
         </div>
 
