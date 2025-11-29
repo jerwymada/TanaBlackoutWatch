@@ -164,8 +164,8 @@ export function Timeline({ outages, neighborhoodName, currentHour, filterHour }:
               ))}
             </div>
           </div>
-          <div className="flex cursor-inherit pointer-events-none">
-            <div className="flex gap-1 px-1 pb-2">
+          <div className="flex cursor-inherit">
+            <div className="flex gap-1 px-1 pb-2 pointer-events-auto">
               {hours.map(hour => {
                 const outage = getOutageForHour(hour, 0);
                 return (
@@ -181,8 +181,8 @@ export function Timeline({ outages, neighborhoodName, currentHour, filterHour }:
                 );
               })}
             </div>
-            <div className="w-px bg-border mx-2" />
-            <div className="flex gap-1 px-1 pb-2">
+            <div className="w-px bg-border mx-2 pointer-events-none" />
+            <div className="flex gap-1 px-1 pb-2 pointer-events-auto">
               {hours.map(hour => {
                 const outage = getOutageForHour(hour, 1);
                 return (
