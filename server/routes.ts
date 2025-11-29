@@ -94,5 +94,79 @@ export async function registerRoutes(
     }
   });
 
+  // Admin routes
+  app.post("/api/admin/neighborhoods", async (req, res) => {
+    try {
+      const { name, district } = req.body;
+      if (!name || !district) {
+        return res.status(400).json({ error: "Missing required fields" });
+      }
+      const neighborhood = await storage.createNeighborhood({ name, district });
+      res.json(neighborhood);
+    } catch (error) {
+      console.error("Error creating neighborhood:", error);
+      res.status(500).json({ error: "Failed to create neighborhood" });
+    }
+  });
+
+  app.patch("/api/admin/neighborhoods/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id, 10);
+      const { name, district } = req.body;
+      if (!name || !district) {
+        return res.status(400).json({ error: "Missing required fields" });
+      }
+      const neighborhood = await storage.updateNeighborhood(id, { name, district });
+      if (!neighborhood) {
+        return res.status(404).json({ error: "Neighborhood not found" });
+      }
+      res.json(neighborhood);
+    } catch (error) {
+      console.error("Error updating neighborhood:", error);
+      res.status(500).json({ error: "Failed to update neighborhood" });
+    }
+  });
+
+  app.delete("/api/admin/neighborhoods/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id, 10);
+      await storage.deleteNeighborhood(id);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting neighborhood:", error);
+      res.status(500).json({ error: "Failed to delete neighborhood" });
+    }
+  });
+
+  app.post("/api/admin/outages", async (req, res) => {
+    try {
+      const { neighborhoodId, date, startHour, endHour } = req.body;
+      if (!neighborhoodId || !date || startHour === undefined || endHour === undefined) {
+        return res.status(400).json({ error: "Missing required fields" });
+      }
+      const outage = await storage.createOutage({ 
+        neighborhoodId: parseInt(neighborhoodId, 10),
+        date, 
+        startHour: parseInt(startHour, 10), 
+        endHour: parseInt(endHour, 10) 
+      });
+      res.json(outage);
+    } catch (error) {
+      console.error("Error creating outage:", error);
+      res.status(500).json({ error: "Failed to create outage" });
+    }
+  });
+
+  app.delete("/api/admin/outages/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id, 10);
+      await storage.deleteOutage(id);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting outage:", error);
+      res.status(500).json({ error: "Failed to delete outage" });
+    }
+  });
+
   return httpServer;
 }
