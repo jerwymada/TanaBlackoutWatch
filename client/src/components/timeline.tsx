@@ -13,6 +13,8 @@ interface TimelineProps {
 export function Timeline({ outages, neighborhoodName, currentHour, filterHour }: TimelineProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [touchStart, setTouchStart] = useState(0);
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragStart, setDragStart] = useState(0);
   const hours = Array.from({ length: 24 }, (_, i) => i);
   
   const hasOutageAtHour = (hour: number): boolean => {
@@ -51,8 +53,36 @@ export function Timeline({ outages, neighborhoodName, currentHour, filterHour }:
     }
   };
 
+  const handleMouseDown = (e: React.MouseEvent) => {
+    setIsDragging(true);
+    setDragStart(e.clientX);
+  };
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (!isDragging) return;
+    
+    const viewport = containerRef.current?.querySelector('[data-radix-scroll-area-viewport]') as HTMLElement;
+    if (viewport) {
+      const diff = dragStart - e.clientX;
+      viewport.scrollLeft += diff;
+      setDragStart(e.clientX);
+    }
+  };
+
+  const handleMouseUp = () => {
+    setIsDragging(false);
+  };
+
   return (
-    <div className="w-full" onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
+    <div 
+      className={`w-full ${isDragging ? 'cursor-grabbing' : 'cursor-grab'}`}
+      onTouchStart={handleTouchStart} 
+      onTouchEnd={handleTouchEnd}
+      onMouseDown={handleMouseDown}
+      onMouseMove={handleMouseMove}
+      onMouseUp={handleMouseUp}
+      onMouseLeave={handleMouseUp}
+    >
       <ScrollArea className="w-full whitespace-nowrap" ref={containerRef}>
         <div className="flex gap-1 px-1 pb-1">
           {hours.map(hour => (
