@@ -10,10 +10,9 @@ interface TimelineProps {
   neighborhoodName: string;
   currentHour: number;
   filterHour?: number | null;
-  showArrows?: boolean;
 }
 
-export function Timeline({ outages, neighborhoodName, currentHour, filterHour, showArrows = false }: TimelineProps) {
+export function Timeline({ outages, neighborhoodName, currentHour, filterHour }: TimelineProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [touchStart, setTouchStart] = useState(0);
   const hours = Array.from({ length: 24 }, (_, i) => i);
@@ -67,7 +66,7 @@ export function Timeline({ outages, neighborhoodName, currentHour, filterHour, s
       <Button
         size="icon"
         variant="ghost"
-        className={`absolute left-0 top-1/2 -translate-y-1/2 z-10 hidden sm:flex transition-opacity ${showArrows ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
+        className="absolute left-0 top-1/2 -translate-y-1/2 z-10 hidden sm:flex"
         onClick={() => handleScroll('left')}
         data-testid="button-timeline-scroll-left"
       >
@@ -100,7 +99,7 @@ export function Timeline({ outages, neighborhoodName, currentHour, filterHour, s
       <Button
         size="icon"
         variant="ghost"
-        className={`absolute right-0 top-1/2 -translate-y-1/2 z-10 hidden sm:flex transition-opacity ${showArrows ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
+        className="absolute right-0 top-1/2 -translate-y-1/2 z-10 hidden sm:flex"
         onClick={() => handleScroll('right')}
         data-testid="button-timeline-scroll-right"
       >
