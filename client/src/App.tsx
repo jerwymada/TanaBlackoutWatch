@@ -22,7 +22,7 @@ function Router() {
 
 function App() {
   return (
-    <ThemeProvider defaultTheme="light" storageKey="delestage-theme">
+    <ThemeProvider defaultTheme="system" storageKey="delestage-theme">
       <QueryClientProvider client={queryClient}>
         <TooltipProvider>
           <Toaster />
