@@ -15,9 +15,12 @@ export interface IStorage {
   getNeighborhoods(): Promise<Neighborhood[]>;
   getNeighborhood(id: number): Promise<Neighborhood | undefined>;
   createNeighborhood(neighborhood: InsertNeighborhood): Promise<Neighborhood>;
+  updateNeighborhood(id: number, neighborhood: InsertNeighborhood): Promise<Neighborhood | undefined>;
+  deleteNeighborhood(id: number): Promise<void>;
   getOutages(date?: string): Promise<Outage[]>;
   getOutagesByNeighborhood(neighborhoodId: number, date?: string): Promise<Outage[]>;
   createOutage(outage: InsertOutage): Promise<Outage>;
+  deleteOutage(id: number): Promise<void>;
   getSchedules(date?: string): Promise<OutageSchedule[]>;
   getHistoricalStats(startDate?: string, endDate?: string): Promise<HistoricalStats>;
   getAvailableDates(): Promise<string[]>;
@@ -82,6 +85,15 @@ export class DatabaseStorage implements IStorage {
     return neighborhood;
   }
 
+  async updateNeighborhood(id: number, insertNeighborhood: InsertNeighborhood): Promise<Neighborhood | undefined> {
+    const [neighborhood] = await db.update(neighborhoods).set(insertNeighborhood).where(eq(neighborhoods.id, id)).returning();
+    return neighborhood || undefined;
+  }
+
+  async deleteNeighborhood(id: number): Promise<void> {
+    await db.delete(neighborhoods).where(eq(neighborhoods.id, id));
+  }
+
   async getOutages(date?: string): Promise<Outage[]> {
     if (date) {
       return await db.select().from(outages).where(eq(outages.date, date));
@@ -101,6 +113,10 @@ export class DatabaseStorage implements IStorage {
   async createOutage(insertOutage: InsertOutage): Promise<Outage> {
     const [outage] = await db.insert(outages).values(insertOutage).returning();
     return outage;
+  }
+
+  async deleteOutage(id: number): Promise<void> {
+    await db.delete(outages).where(eq(outages.id, id));
   }
 
   async getSchedules(date?: string): Promise<OutageSchedule[]> {
