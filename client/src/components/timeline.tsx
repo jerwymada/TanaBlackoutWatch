@@ -25,7 +25,7 @@ export function Timeline({ outages, neighborhoodName, currentHour, filterHour }:
       const scrollViewport = containerRef.current?.querySelector('[data-radix-scroll-area-viewport]') as HTMLElement;
       if (scrollViewport) {
         const hourToScroll = filterHour !== null && filterHour !== undefined ? filterHour : currentHour;
-        const slotWidth = 60;
+        const slotWidth = 30;
         const gap = 4;
         const containerWidth = scrollViewport.clientWidth;
         const scrollPosition = Math.max(0, (hourToScroll * (slotWidth + gap)) - (containerWidth / 2) + (slotWidth / 2));
@@ -43,7 +43,7 @@ export function Timeline({ outages, neighborhoodName, currentHour, filterHour }:
           {hours.map(hour => (
             <div 
               key={hour} 
-              className="min-w-[3.75rem] text-center text-xs text-muted-foreground font-medium"
+              className="min-w-[1.875rem] text-center text-xs text-muted-foreground font-medium"
             >
               {hour.toString().padStart(2, '0')}h
             </div>

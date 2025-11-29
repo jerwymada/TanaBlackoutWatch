@@ -20,7 +20,7 @@ export function TimelineSlot({ hour, hasOutage, neighborhoodName, isCurrentHour 
       <TooltipTrigger asChild>
         <div
           className={cn(
-            "min-w-[3.75rem] h-10 rounded-md flex items-center justify-center text-xs font-medium transition-all duration-200 cursor-default select-none",
+            "min-w-[1.875rem] h-10 rounded-md flex items-center justify-center text-xs font-medium transition-all duration-200 cursor-default select-none",
             hasOutage 
               ? "bg-outage text-outage-foreground" 
               : "bg-active/20 text-active dark:bg-active/30",
