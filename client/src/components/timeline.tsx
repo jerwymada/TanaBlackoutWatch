@@ -45,7 +45,7 @@ export function Timeline({ outages, neighborhoodName, currentHour, filterHour }:
               key={hour} 
               className="min-w-[1.875rem] text-center text-xs text-muted-foreground font-medium"
             >
-              {hour.toString().padStart(2, '0')}h
+              {hour.toString().padStart(2, '0')}
             </div>
           ))}
         </div>
