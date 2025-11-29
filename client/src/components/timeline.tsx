@@ -63,17 +63,17 @@ export function Timeline({ outages, neighborhoodName, currentHour, filterHour, s
   };
 
   return (
-    <div className="flex items-center gap-2 w-full" onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
+    <div className="relative w-full" onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
       <Button
         size="icon"
         variant="ghost"
-        className={`hidden sm:flex shrink-0 h-10 transition-opacity ${showArrows ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
+        className={`absolute left-0 top-1/2 -translate-y-1/2 z-10 hidden sm:flex transition-opacity ${showArrows ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
         onClick={() => handleScroll('left')}
         data-testid="button-timeline-scroll-left"
       >
         <ChevronLeft className="h-4 w-4" />
       </Button>
-      <ScrollArea className="flex-1 w-full whitespace-nowrap" ref={containerRef}>
+      <ScrollArea className="w-full whitespace-nowrap" ref={containerRef}>
         <div className="flex gap-1 px-1 pb-1">
           {hours.map(hour => (
             <div 
@@ -100,7 +100,7 @@ export function Timeline({ outages, neighborhoodName, currentHour, filterHour, s
       <Button
         size="icon"
         variant="ghost"
-        className={`hidden sm:flex shrink-0 h-10 transition-opacity ${showArrows ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
+        className={`absolute right-0 top-1/2 -translate-y-1/2 z-10 hidden sm:flex transition-opacity ${showArrows ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
         onClick={() => handleScroll('right')}
         data-testid="button-timeline-scroll-right"
       >
