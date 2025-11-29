@@ -131,21 +131,6 @@ export default function Home() {
       </header>
 
       <main className="container mx-auto px-3 py-4 sm:px-4 sm:py-6 space-y-4 sm:space-y-6">
-        <div className="flex items-center justify-between flex-wrap gap-2">
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <div className="w-2 h-2 rounded-full bg-active animate-pulse" />
-            <span>
-              Mise à jour: {new Date().toLocaleTimeString('fr-FR', { 
-                hour: '2-digit', 
-                minute: '2-digit' 
-              })}
-            </span>
-          </div>
-          <div className="text-sm font-medium">
-            Heure actuelle: <span className="text-foreground">{currentHour.toString().padStart(2, '0')}:00</span>
-          </div>
-        </div>
-
         {isLoading ? (
           <StatusSummarySkeleton />
         ) : isError ? null : schedules ? (
