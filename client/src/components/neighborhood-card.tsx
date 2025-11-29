@@ -48,9 +48,10 @@ export function NeighborhoodCard({
               {neighborhood.name}
             </h3>
             <Badge 
-              variant={hasCurrentOutage ? "destructive" : "secondary"}
+              variant={hasCurrentOutage ? "secondary" : "secondary"}
               className={cn(
                 "shrink-0",
+                hasCurrentOutage && "bg-[hsl(0,100%,84%)] text-[hsl(6,78%,57%)] hover:bg-[hsl(0,100%,80%)] dark:bg-[hsl(0,100%,84%)] dark:text-[hsl(6,78%,57%)]",
                 !hasCurrentOutage && "bg-active/20 text-active hover:bg-active/30 dark:bg-active/30"
               )}
               data-testid={`badge-status-${neighborhood.id}`}
