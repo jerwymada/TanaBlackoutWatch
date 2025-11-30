@@ -1,6 +1,4 @@
 import { 
-  neighborhoods, 
-  outages, 
   type Neighborhood, 
   type Outage, 
   type OutageSchedule, 
@@ -8,8 +6,47 @@ import {
   type InsertOutage,
   type HistoricalStats
 } from "@shared/schema";
-import { db } from "./db";
-import { eq, and, sql, desc, asc, SQL } from "drizzle-orm";
+import { createClient } from '@supabase/supabase-js';
+import { readFileSync } from 'fs';
+import { join } from 'path';
+
+// Load environment variables from env.production if not already set
+if (!process.env.SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE) {
+  const envPath = join(process.cwd(), 'env.production');
+  try {
+    const envContent = readFileSync(envPath, 'utf-8');
+    envContent.split('\n').forEach(line => {
+      const trimmed = line.trim();
+      if (trimmed && !trimmed.startsWith('#')) {
+        const match = trimmed.match(/^([^=]+)=(.*)$/);
+        if (match) {
+          const key = match[1].trim();
+          const value = match[2].trim();
+          if (key && value && !process.env[key]) {
+            process.env[key] = value;
+          }
+        }
+      }
+    });
+  } catch (error) {
+    console.error('⚠️  Could not read env.production file');
+  }
+}
+
+if (!process.env.SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE) {
+  throw new Error("SUPABASE_URL and SUPABASE_SERVICE_ROLE must be set in env.production");
+}
+
+const supabase = createClient(
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_ROLE,
+  {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false,
+    },
+  }
+);
 
 export interface IStorage {
   getNeighborhoods(): Promise<Neighborhood[]>;
@@ -20,6 +57,8 @@ export interface IStorage {
   getOutages(date?: string): Promise<Outage[]>;
   getOutagesByNeighborhood(neighborhoodId: number, date?: string): Promise<Outage[]>;
   createOutage(outage: InsertOutage): Promise<Outage>;
+  updateOutage(id: number, outage: Partial<InsertOutage>): Promise<Outage | undefined>;
+  updateOutagesBulk(ids: number[], outage: Partial<InsertOutage>): Promise<Outage[]>;
   deleteOutage(id: number): Promise<void>;
   getSchedules(date?: string): Promise<OutageSchedule[]>;
   getHistoricalStats(startDate?: string, endDate?: string): Promise<HistoricalStats>;
@@ -69,67 +108,521 @@ const OUTAGE_PATTERNS = [
   [{ start: 15, end: 19 }],
 ];
 
+// Fonction utilitaire pour détecter si deux plages horaires se chevauchent
+function doTimeSlotsOverlap(start1: number, end1: number, start2: number, end2: number): boolean {
+  return start1 < end2 && end1 > start2;
+}
+
+// Fonction utilitaire pour fusionner les plages horaires qui se chevauchent
+function mergeOverlappingOutages(outages: Outage[]): Outage[] {
+  if (outages.length === 0) return [];
+  
+  // Trier les plages par startHour
+  const sorted = [...outages].sort((a, b) => a.startHour - b.startHour);
+  const merged: Outage[] = [];
+  
+  for (const current of sorted) {
+    if (merged.length === 0) {
+      merged.push({ ...current });
+      continue;
+    }
+    
+    const last = merged[merged.length - 1];
+    
+    // Vérifier si la plage actuelle chevauche avec la dernière plage fusionnée
+    if (doTimeSlotsOverlap(last.startHour, last.endHour, current.startHour, current.endHour)) {
+      // Fusionner : prendre le min des starts et le max des ends
+      last.startHour = Math.min(last.startHour, current.startHour);
+      last.endHour = Math.max(last.endHour, current.endHour);
+      
+      // Gérer la raison : concaténer si différentes, sinon garder la première
+      if (current.reason && current.reason !== last.reason) {
+        if (last.reason) {
+          last.reason = `${last.reason}; ${current.reason}`;
+        } else {
+          last.reason = current.reason;
+        }
+      }
+    } else {
+      // Pas de chevauchement, ajouter comme nouvelle plage
+      merged.push({ ...current });
+    }
+  }
+  
+  return merged;
+}
+
 export class DatabaseStorage implements IStorage {
   async getNeighborhoods(): Promise<Neighborhood[]> {
-    const results = await db.select().from(neighborhoods).orderBy(asc(neighborhoods.name));
-    return results;
+    const { data, error } = await supabase
+      .from('neighborhoods')
+      .select('*')
+      .order('name', { ascending: true });
+    
+    if (error) throw error;
+    return data || [];
   }
 
   async getNeighborhood(id: number): Promise<Neighborhood | undefined> {
-    const [neighborhood] = await db.select().from(neighborhoods).where(eq(neighborhoods.id, id));
-    return neighborhood || undefined;
+    const { data, error } = await supabase
+      .from('neighborhoods')
+      .select('*')
+      .eq('id', id)
+      .single();
+    
+    if (error) {
+      if (error.code === 'PGRST116') return undefined;
+      throw error;
+    }
+    return data || undefined;
   }
 
   async createNeighborhood(insertNeighborhood: InsertNeighborhood): Promise<Neighborhood> {
-    const [neighborhood] = await db.insert(neighborhoods).values(insertNeighborhood).returning();
-    return neighborhood;
+    const { data, error } = await supabase
+      .from('neighborhoods')
+      .insert(insertNeighborhood)
+      .select()
+      .single();
+    
+    if (error) throw error;
+    if (!data) throw new Error('Failed to create neighborhood');
+    return data;
   }
 
   async updateNeighborhood(id: number, insertNeighborhood: InsertNeighborhood): Promise<Neighborhood | undefined> {
-    const [neighborhood] = await db.update(neighborhoods).set(insertNeighborhood).where(eq(neighborhoods.id, id)).returning();
-    return neighborhood || undefined;
+    const { data, error } = await supabase
+      .from('neighborhoods')
+      .update(insertNeighborhood)
+      .eq('id', id)
+      .select()
+      .single();
+    
+    if (error) {
+      if (error.code === 'PGRST116') return undefined;
+      throw error;
+    }
+    return data || undefined;
   }
 
   async deleteNeighborhood(id: number): Promise<void> {
-    await db.delete(neighborhoods).where(eq(neighborhoods.id, id));
+    const { error } = await supabase
+      .from('neighborhoods')
+      .delete()
+      .eq('id', id);
+    
+    if (error) throw error;
   }
 
   async getOutages(date?: string): Promise<Outage[]> {
+    let query = supabase.from('outages').select('*');
+    
     if (date) {
-      return await db.select().from(outages).where(eq(outages.date, date));
+      query = query.eq('date', date);
     }
-    return await db.select().from(outages);
+    
+    const { data, error } = await query;
+    
+    if (error) throw error;
+    
+    // Convertir les noms de colonnes de snake_case vers camelCase
+    const converted = (data || []).map(o => ({
+      id: o.id,
+      neighborhoodId: o.neighborhood_id,
+      date: o.date,
+      startHour: Number(o.start_hour),
+      endHour: Number(o.end_hour),
+      reason: o.reason,
+    }));
+    
+    return converted;
   }
 
   async getOutagesByNeighborhood(neighborhoodId: number, date?: string): Promise<Outage[]> {
+    let query = supabase
+      .from('outages')
+      .select('*')
+      .eq('neighborhood_id', neighborhoodId);
+    
     if (date) {
-      return await db.select().from(outages).where(
-        and(eq(outages.neighborhoodId, neighborhoodId), eq(outages.date, date))
-      );
+      query = query.eq('date', date);
     }
-    return await db.select().from(outages).where(eq(outages.neighborhoodId, neighborhoodId));
+    
+    const { data, error } = await query;
+    
+    if (error) throw error;
+    
+    // Convertir les noms de colonnes de snake_case vers camelCase
+    const converted = (data || []).map(o => ({
+      id: o.id,
+      neighborhoodId: o.neighborhood_id,
+      date: o.date,
+      startHour: Number(o.start_hour),
+      endHour: Number(o.end_hour),
+      reason: o.reason,
+    }));
+    
+    return converted;
   }
 
   async createOutage(insertOutage: InsertOutage): Promise<Outage> {
-    const [outage] = await db.insert(outages).values(insertOutage).returning();
-    return outage;
+    // Récupérer toutes les plages existantes pour ce quartier et cette date
+    const existingOutages = await this.getOutagesByNeighborhood(insertOutage.neighborhoodId, insertOutage.date);
+    
+    // Créer une plage temporaire pour la nouvelle plage (sans ID)
+    const newOutage: Outage = {
+      id: -1, // ID temporaire
+      neighborhoodId: insertOutage.neighborhoodId,
+      date: insertOutage.date,
+      startHour: insertOutage.startHour,
+      endHour: insertOutage.endHour,
+      reason: insertOutage.reason || null,
+    };
+    
+    // Ajouter la nouvelle plage à la liste existante
+    const allOutages = [...existingOutages, newOutage];
+    
+    // Fusionner les plages qui se chevauchent
+    const mergedOutages = mergeOverlappingOutages(allOutages);
+    
+    // Trouver la plage fusionnée qui contient la nouvelle plage
+    const mergedOutage = mergedOutages.find(merged => 
+      merged.startHour <= insertOutage.startHour && merged.endHour >= insertOutage.endHour
+    ) || mergedOutages[mergedOutages.length - 1];
+    
+    // Si des plages ont été fusionnées (le nombre de plages a diminué), supprimer les anciennes et créer la nouvelle fusionnée
+    if (mergedOutages.length < allOutages.length) {
+      // Identifier les plages à supprimer (celles qui ont été fusionnées)
+      const idsToDelete: number[] = [];
+      for (const existing of existingOutages) {
+        // Vérifier si cette plage a été fusionnée dans mergedOutage
+        if (doTimeSlotsOverlap(existing.startHour, existing.endHour, mergedOutage.startHour, mergedOutage.endHour)) {
+          idsToDelete.push(existing.id);
+        }
+      }
+      
+      // Supprimer les plages fusionnées
+      if (idsToDelete.length > 0) {
+        const { error: deleteError } = await supabase
+          .from('outages')
+          .delete()
+          .in('id', idsToDelete);
+        
+        if (deleteError) throw deleteError;
+      }
+      
+      // Créer la nouvelle plage fusionnée
+      const { data, error } = await supabase
+        .from('outages')
+        .insert({
+          neighborhood_id: mergedOutage.neighborhoodId,
+          date: mergedOutage.date,
+          start_hour: mergedOutage.startHour,
+          end_hour: mergedOutage.endHour,
+          reason: mergedOutage.reason || null,
+        })
+        .select()
+        .single();
+      
+      if (error) throw error;
+      if (!data) throw new Error('Failed to create merged outage');
+      
+      // Convertir les noms de colonnes
+      return {
+        id: data.id,
+        neighborhoodId: data.neighborhood_id,
+        date: data.date,
+        startHour: data.start_hour,
+        endHour: data.end_hour,
+        reason: data.reason,
+      };
+    } else {
+      // Pas de fusion nécessaire, créer normalement
+      const { data, error } = await supabase
+        .from('outages')
+        .insert({
+          neighborhood_id: insertOutage.neighborhoodId,
+          date: insertOutage.date,
+          start_hour: insertOutage.startHour,
+          end_hour: insertOutage.endHour,
+          reason: insertOutage.reason || null,
+        })
+        .select()
+        .single();
+      
+      if (error) throw error;
+      if (!data) throw new Error('Failed to create outage');
+      
+      // Convertir les noms de colonnes
+      return {
+        id: data.id,
+        neighborhoodId: data.neighborhood_id,
+        date: data.date,
+        startHour: data.start_hour,
+        endHour: data.end_hour,
+        reason: data.reason,
+      };
+    }
+  }
+
+  async updateOutage(id: number, updateOutage: Partial<InsertOutage>): Promise<Outage | undefined> {
+    // Récupérer la plage actuelle
+    const { data: currentData, error: fetchError } = await supabase
+      .from('outages')
+      .select('*')
+      .eq('id', id)
+      .single();
+    
+    if (fetchError) {
+      if (fetchError.code === 'PGRST116') return undefined;
+      throw fetchError;
+    }
+    
+    if (!currentData) return undefined;
+    
+    // Déterminer les valeurs finales (mises à jour ou existantes)
+    const finalNeighborhoodId = updateOutage.neighborhoodId !== undefined 
+      ? updateOutage.neighborhoodId 
+      : currentData.neighborhood_id;
+    const finalDate = updateOutage.date !== undefined 
+      ? updateOutage.date 
+      : currentData.date;
+    const finalStartHour = updateOutage.startHour !== undefined 
+      ? updateOutage.startHour 
+      : currentData.start_hour;
+    const finalEndHour = updateOutage.endHour !== undefined 
+      ? updateOutage.endHour 
+      : currentData.end_hour;
+    const finalReason = updateOutage.reason !== undefined 
+      ? (updateOutage.reason || null)
+      : currentData.reason;
+    
+    // Récupérer toutes les plages existantes pour ce quartier et cette date (sauf celle en cours de modification)
+    const existingOutages = await this.getOutagesByNeighborhood(finalNeighborhoodId, finalDate);
+    const otherOutages = existingOutages.filter(o => o.id !== id);
+    
+    // Créer la plage modifiée
+    const updatedOutage: Outage = {
+      id: id,
+      neighborhoodId: finalNeighborhoodId,
+      date: finalDate,
+      startHour: finalStartHour,
+      endHour: finalEndHour,
+      reason: finalReason,
+    };
+    
+    // Ajouter la plage modifiée à la liste des autres plages
+    const allOutages = [...otherOutages, updatedOutage];
+    
+    // Fusionner les plages qui se chevauchent
+    const mergedOutages = mergeOverlappingOutages(allOutages);
+    
+    // Trouver la plage fusionnée qui contient la plage modifiée
+    const mergedOutage = mergedOutages.find(merged => 
+      merged.id === id || (merged.startHour <= finalStartHour && merged.endHour >= finalEndHour)
+    ) || mergedOutages[mergedOutages.length - 1];
+    
+    // Si des plages ont été fusionnées, supprimer les anciennes et mettre à jour/créer la fusionnée
+    if (mergedOutages.length < allOutages.length || mergedOutage.id !== id) {
+      // Identifier les plages à supprimer (celles qui ont été fusionnées, sauf celle en cours de modification)
+      const idsToDelete: number[] = [];
+      for (const existing of otherOutages) {
+        // Vérifier si cette plage a été fusionnée dans mergedOutage
+        if (doTimeSlotsOverlap(existing.startHour, existing.endHour, mergedOutage.startHour, mergedOutage.endHour)) {
+          idsToDelete.push(existing.id);
+        }
+      }
+      
+      // Supprimer les plages fusionnées
+      if (idsToDelete.length > 0) {
+        const { error: deleteError } = await supabase
+          .from('outages')
+          .delete()
+          .in('id', idsToDelete);
+        
+        if (deleteError) throw deleteError;
+      }
+      
+      // Si la plage fusionnée est différente de celle en cours de modification, supprimer l'ancienne et créer la nouvelle
+      if (mergedOutage.id !== id) {
+        // Supprimer l'ancienne plage
+        const { error: deleteError } = await supabase
+          .from('outages')
+          .delete()
+          .eq('id', id);
+        
+        if (deleteError) throw deleteError;
+        
+        // Créer la nouvelle plage fusionnée
+        const { data, error } = await supabase
+          .from('outages')
+          .insert({
+            neighborhood_id: mergedOutage.neighborhoodId,
+            date: mergedOutage.date,
+            start_hour: mergedOutage.startHour,
+            end_hour: mergedOutage.endHour,
+            reason: mergedOutage.reason || null,
+          })
+          .select()
+          .single();
+        
+        if (error) throw error;
+        if (!data) throw new Error('Failed to create merged outage');
+        
+        // Convertir les noms de colonnes
+        return {
+          id: data.id,
+          neighborhoodId: data.neighborhood_id,
+          date: data.date,
+          startHour: data.start_hour,
+          endHour: data.end_hour,
+          reason: data.reason,
+        };
+      } else {
+        // Mettre à jour la plage existante avec les valeurs fusionnées
+        const { data, error } = await supabase
+          .from('outages')
+          .update({
+            neighborhood_id: mergedOutage.neighborhoodId,
+            date: mergedOutage.date,
+            start_hour: mergedOutage.startHour,
+            end_hour: mergedOutage.endHour,
+            reason: mergedOutage.reason || null,
+          })
+          .eq('id', id)
+          .select()
+          .single();
+        
+        if (error) throw error;
+        if (!data) return undefined;
+        
+        // Convertir les noms de colonnes
+        return {
+          id: data.id,
+          neighborhoodId: data.neighborhood_id,
+          date: data.date,
+          startHour: data.start_hour,
+          endHour: data.end_hour,
+          reason: data.reason,
+        };
+      }
+    } else {
+      // Pas de fusion nécessaire, mettre à jour normalement
+      const updateData: any = {};
+      
+      if (updateOutage.neighborhoodId !== undefined) {
+        updateData.neighborhood_id = updateOutage.neighborhoodId;
+      }
+      if (updateOutage.date !== undefined) {
+        updateData.date = updateOutage.date;
+      }
+      if (updateOutage.startHour !== undefined) {
+        updateData.start_hour = updateOutage.startHour;
+      }
+      if (updateOutage.endHour !== undefined) {
+        updateData.end_hour = updateOutage.endHour;
+      }
+      if (updateOutage.reason !== undefined) {
+        updateData.reason = updateOutage.reason || null;
+      }
+      
+      const { data, error } = await supabase
+        .from('outages')
+        .update(updateData)
+        .eq('id', id)
+        .select()
+        .single();
+      
+      if (error) {
+        if (error.code === 'PGRST116') return undefined;
+        throw error;
+      }
+      
+      if (!data) return undefined;
+      
+      // Convertir les noms de colonnes
+      return {
+        id: data.id,
+        neighborhoodId: data.neighborhood_id,
+        date: data.date,
+        startHour: data.start_hour,
+        endHour: data.end_hour,
+        reason: data.reason,
+      };
+    }
+  }
+
+  async updateOutagesBulk(ids: number[], updateOutage: Partial<InsertOutage>): Promise<Outage[]> {
+    if (ids.length === 0) {
+      return [];
+    }
+
+    // Pour la modification en masse, on applique la fusion en traitant chaque plage individuellement
+    // via updateOutage qui gère déjà la fusion automatiquement
+    const updatedOutages: Outage[] = [];
+    
+    for (const id of ids) {
+      const updated = await this.updateOutage(id, updateOutage);
+      if (updated) {
+        updatedOutages.push(updated);
+      }
+    }
+    
+    return updatedOutages;
   }
 
   async deleteOutage(id: number): Promise<void> {
-    await db.delete(outages).where(eq(outages.id, id));
+    const { error } = await supabase
+      .from('outages')
+      .delete()
+      .eq('id', id);
+    
+    if (error) throw error;
   }
 
   async getSchedules(date?: string): Promise<OutageSchedule[]> {
     const allNeighborhoods = await this.getNeighborhoods();
     const targetDate = date || new Date().toISOString().split('T')[0];
     
-    const schedules: OutageSchedule[] = [];
+    // Grouper les quartiers par (name, district) pour éviter les doublons
+    // Normaliser la clé pour gérer les différences de casse et d'espaces
+    const neighborhoodGroups = new Map<string, Neighborhood[]>();
     
     for (const neighborhood of allNeighborhoods) {
+      // Normaliser : trim, lowercase, et remplacer les espaces multiples par un seul espace
+      const normalizedName = neighborhood.name.trim().toLowerCase().replace(/\s+/g, ' ');
+      const normalizedDistrict = neighborhood.district.trim().toLowerCase().replace(/\s+/g, ' ');
+      const key = `${normalizedName}_${normalizedDistrict}`;
+      
+      if (!neighborhoodGroups.has(key)) {
+        neighborhoodGroups.set(key, []);
+      }
+      neighborhoodGroups.get(key)!.push(neighborhood);
+    }
+    
+    const schedules: OutageSchedule[] = [];
+    
+    // Pour chaque groupe de quartiers (même nom + même arrondissement)
+    for (const [key, neighborhoods] of neighborhoodGroups.entries()) {
+      // Prendre le premier quartier comme représentant (pour maintenir la cohérence avec les favoris)
+      const representativeNeighborhood = neighborhoods[0];
+      
+      // Récupérer toutes les plages horaires de tous les quartiers du groupe
+      const allOutages: Outage[] = [];
+      for (const neighborhood of neighborhoods) {
       const neighborhoodOutages = await this.getOutagesByNeighborhood(neighborhood.id, targetDate);
+        allOutages.push(...neighborhoodOutages);
+      }
+      
+      // Fusionner les plages qui se chevauchent
+      const mergedOutages = mergeOverlappingOutages(allOutages);
+      
+      // Trier par startHour
+      mergedOutages.sort((a, b) => a.startHour - b.startHour);
+      
+      // Créer un seul schedule pour ce groupe
       schedules.push({
-        neighborhood,
-        outages: neighborhoodOutages.sort((a, b) => a.startHour - b.startHour),
+        neighborhood: representativeNeighborhood,
+        outages: mergedOutages,
       });
     }
     
@@ -137,28 +630,25 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getHistoricalStats(startDate?: string, endDate?: string): Promise<HistoricalStats> {
-    const conditions: SQL[] = [];
+    let query = supabase.from('outages').select('date, neighborhood_id, start_hour, end_hour');
     
     if (startDate) {
-      conditions.push(sql`${outages.date} >= ${startDate}`);
+      query = query.gte('date', startDate);
     }
     if (endDate) {
-      conditions.push(sql`${outages.date} <= ${endDate}`);
+      query = query.lte('date', endDate);
     }
     
-    const filteredOutages = conditions.length > 0
-      ? await db.select({
-          date: outages.date,
-          neighborhoodId: outages.neighborhoodId,
-          startHour: outages.startHour,
-          endHour: outages.endHour,
-        }).from(outages).where(and(...conditions))
-      : await db.select({
-          date: outages.date,
-          neighborhoodId: outages.neighborhoodId,
-          startHour: outages.startHour,
-          endHour: outages.endHour,
-        }).from(outages);
+    const { data, error } = await query;
+    
+    if (error) throw error;
+    
+    const filteredOutages = (data || []).map(o => ({
+      date: o.date,
+      neighborhoodId: o.neighborhood_id,
+      startHour: o.start_hour,
+      endHour: o.end_hour,
+    }));
 
     const totalOutageHours = filteredOutages.reduce((sum, o) => sum + (o.endHour - o.startHour), 0);
     
@@ -202,11 +692,16 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getAvailableDates(): Promise<string[]> {
-    const results = await db
-      .selectDistinct({ date: outages.date })
-      .from(outages)
-      .orderBy(desc(outages.date));
-    return results.map(r => r.date);
+    const { data, error } = await supabase
+      .from('outages')
+      .select('date')
+      .order('date', { ascending: false });
+    
+    if (error) throw error;
+    
+    // Extraire les dates uniques
+    const uniqueDates = Array.from(new Set((data || []).map(o => o.date)));
+    return uniqueDates;
   }
 
   async seedData(): Promise<void> {

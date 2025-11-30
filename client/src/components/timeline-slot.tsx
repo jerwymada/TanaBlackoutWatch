@@ -57,7 +57,7 @@ export function TimelineSlot({
           aria-label={`${formattedTime} - ${hasOutage ? 'Coupure' : 'Électricité active'} - ${neighborhoodName}`}
         >
           {hasOutage && (
-            <div className="w-2 h-2 rounded-full bg-[hsl(6,78%,57%)]" />
+            <div className="w-1 h-1 rounded-full bg-[hsl(6,78%,57%)]" />
           )}
         </div>
       </TooltipTrigger>

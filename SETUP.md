@@ -2,67 +2,66 @@
 
 ## Prérequis
 - Node.js installé
-- Docker Desktop installé et démarré
+- Un projet Supabase configuré avec les tables créées
 
-## Étapes pour lancer le projet en local
+## Configuration Supabase
 
-### 1. Démarrer Docker Desktop
-Assurez-vous que Docker Desktop est en cours d'exécution sur votre machine.
+Le projet utilise Supabase comme base de données. Assurez-vous que :
 
-### 2. Démarrer la base de données PostgreSQL
+1. **Les tables sont créées** dans Supabase :
+   - `neighborhoods`
+   - `outages`
+
+2. **Le fichier `env.production` est configuré** avec :
+   - `SUPABASE_URL`
+   - `SUPABASE_ANON_KEY`
+   - `SUPABASE_SERVICE_ROLE`
+
+## Lancer le projet
+
+### 1. Installer les dépendances
+
 ```bash
-npm run db:start
+npm install
 ```
-Cette commande démarre un conteneur PostgreSQL avec Docker.
 
-### 3. Attendre que la base de données soit prête
-Attendez quelques secondes que PostgreSQL soit complètement démarré.
+### 2. Vérifier la configuration Supabase
 
-### 4. Créer le schéma de base de données
 ```bash
-npm run db:push
-```
-Cette commande crée les tables nécessaires dans la base de données.
-
-### 5. Configurer la variable d'environnement DATABASE_URL
-
-**Option A : Créer un fichier .env** (recommandé)
-Créez un fichier `.env` à la racine du projet avec :
-```
-DATABASE_URL=postgresql://postgres:postgres@localhost:5432/tanablackoutwatch
-PORT=5000
+npm run db:test
 ```
 
-**Option B : Définir la variable dans le terminal**
-```bash
-export DATABASE_URL="postgresql://postgres:postgres@localhost:5432/tanablackoutwatch"
-```
+Cette commande vérifie que les tables existent et sont accessibles.
 
-### 6. Lancer le serveur de développement
+### 3. Démarrer le serveur de développement
+
 ```bash
 npm run dev
 ```
 
-Le serveur devrait démarrer sur http://localhost:5000
+Le serveur démarre sur http://localhost:5000
+
+Les données seront automatiquement initialisées au démarrage si les tables sont vides.
 
 ## Commandes utiles
 
-- `npm run db:start` - Démarrer la base de données
-- `npm run db:stop` - Arrêter la base de données
-- `npm run db:reset` - Réinitialiser la base de données (supprime toutes les données)
 - `npm run dev` - Lancer le serveur de développement
 - `npm run build` - Construire le projet pour la production
+- `npm run db:test` - Vérifier la connexion à Supabase
+- `npm run db:wait-cache` - Attendre le rafraîchissement du cache PostgREST
 
 ## Dépannage
 
-### Le serveur ne démarre pas
-- Vérifiez que Docker Desktop est en cours d'exécution
-- Vérifiez que la base de données est démarrée : `docker ps`
-- Vérifiez que DATABASE_URL est correctement défini
+### Erreur de connexion à Supabase
 
-### Erreur de connexion à la base de données
-- Assurez-vous que le conteneur PostgreSQL est en cours d'exécution : `docker ps`
-- Vérifiez les logs : `docker-compose logs postgres`
-- Redémarrez la base de données : `npm run db:reset`
+- Vérifiez que `SUPABASE_URL` et `SUPABASE_SERVICE_ROLE` sont corrects dans `env.production`
+- Vérifiez que les tables existent dans Supabase
+- Attendez 1-2 minutes si les tables viennent d'être créées (cache PostgREST)
 
+### Tables non trouvées
 
+Si vous voyez "Could not find the table", attendez quelques minutes pour que le cache PostgREST se rafraîchisse, puis :
+
+```bash
+npm run db:wait-cache
+```

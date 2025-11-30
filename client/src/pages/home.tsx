@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Zap, RefreshCw } from "lucide-react";
+import { Zap, RefreshCw, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { FilterControls } from "@/components/filter-controls";
@@ -43,7 +43,65 @@ export default function Home() {
   const filteredSchedules = useMemo(() => {
     if (!schedules) return [];
 
-    let filtered = [...schedules];
+    // Étape 1: Regrouper les quartiers dupliqués (même nom + même arrondissement)
+    // Normaliser pour gérer les différences de casse et d'espaces
+    const normalizeKey = (name: string, district: string) => {
+      return `${name.trim().toLowerCase().replace(/\s+/g, ' ')}_${district.trim().toLowerCase().replace(/\s+/g, ' ')}`;
+    };
+    
+    const groupedSchedules = new Map<string, OutageSchedule>();
+    
+    for (const schedule of schedules) {
+      const key = normalizeKey(schedule.neighborhood.name, schedule.neighborhood.district);
+      
+      if (groupedSchedules.has(key)) {
+        // Fusionner les plages horaires avec le schedule existant
+        const existing = groupedSchedules.get(key)!;
+        const allOutages = [...existing.outages, ...schedule.outages];
+        
+        // Trier et fusionner les plages qui se chevauchent (si nécessaire)
+        allOutages.sort((a, b) => a.startHour - b.startHour);
+        
+        // Fusionner les plages qui se chevauchent
+        const mergedOutages: typeof allOutages = [];
+        for (const outage of allOutages) {
+          if (mergedOutages.length === 0) {
+            mergedOutages.push(outage);
+            continue;
+          }
+          
+          const last = mergedOutages[mergedOutages.length - 1];
+          
+          // Vérifier si la plage actuelle chevauche avec la dernière plage fusionnée
+          if (last.startHour < outage.endHour && last.endHour > outage.startHour) {
+            // Fusionner : prendre le min des starts et le max des ends
+            last.startHour = Math.min(last.startHour, outage.startHour);
+            last.endHour = Math.max(last.endHour, outage.endHour);
+            
+            // Gérer la raison : concaténer si différentes
+            if (outage.reason && outage.reason !== last.reason) {
+              if (last.reason) {
+                last.reason = `${last.reason}; ${outage.reason}`;
+              } else {
+                last.reason = outage.reason;
+              }
+            }
+          } else {
+            // Pas de chevauchement, ajouter comme nouvelle plage
+            mergedOutages.push(outage);
+          }
+        }
+        
+        groupedSchedules.set(key, {
+          neighborhood: existing.neighborhood, // Garder le premier quartier comme représentant
+          outages: mergedOutages,
+        });
+      } else {
+        groupedSchedules.set(key, schedule);
+      }
+    }
+    
+    let filtered = Array.from(groupedSchedules.values());
 
     if (showFavoritesOnly) {
       filtered = filtered.filter(schedule => 
@@ -150,66 +208,72 @@ export default function Home() {
         </div>
 
         {isLoading ? (
-          <FilterControlsSkeleton />
-        ) : (
-          <FilterControls
-            searchQuery={searchQuery}
-            onSearchChange={setSearchQuery}
-            selectedHour={selectedHour}
-            onHourChange={setSelectedHour}
-            showFavoritesOnly={showFavoritesOnly}
-            onToggleFavorites={() => setShowFavoritesOnly(!showFavoritesOnly)}
-            activeFiltersCount={activeFiltersCount}
-            onClearFilters={clearFilters}
-          />
-        )}
-
-        {isLoading ? (
-          <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-4">
-            {Array.from({ length: 6 }).map((_, i) => (
-              <NeighborhoodCardSkeleton key={i} />
-            ))}
+          <div className="flex flex-col items-center justify-center gap-4 py-12 min-h-[400px]">
+            <Loader2 className="h-10 w-10 animate-spin text-primary" />
+            <div className="text-center">
+              <p className="text-base font-medium text-foreground mb-1">Chargement des données...</p>
+              <p className="text-sm text-muted-foreground">Veuillez patienter</p>
+            </div>
           </div>
-        ) : isError ? (
-          <EmptyState type="loading-error" />
-        ) : filteredSchedules.length === 0 ? (
-          showFavoritesOnly && favorites.length === 0 ? (
-            <EmptyState type="no-favorites" />
-          ) : (
-            <EmptyState type="no-results" onClearFilters={clearFilters} />
-          )
         ) : (
           <>
-            <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-4">
-              {filteredSchedules.slice(0, displayCount).map(schedule => (
-                <div
-                  key={schedule.neighborhood.id}
-                  className={expandedCardId === schedule.neighborhood.id ? "lg:col-span-2 xl:col-span-3" : ""}
-                >
-                  <NeighborhoodCard
-                    neighborhood={schedule.neighborhood}
-                    outages={schedule.outages}
-                    isFavorite={isFavorite(schedule.neighborhood.id)}
-                    onToggleFavorite={() => toggleFavorite(schedule.neighborhood.id)}
-                    currentHour={currentHour}
-                    filterHour={filterHour}
-                    isExpanded={expandedCardId === schedule.neighborhood.id}
-                    onToggleExpand={() => setExpandedCardId(expandedCardId === schedule.neighborhood.id ? null : schedule.neighborhood.id)}
-                  />
-                </div>
-              ))}
-            </div>
+            <FilterControls
+              searchQuery={searchQuery}
+              onSearchChange={setSearchQuery}
+              selectedHour={selectedHour}
+              onHourChange={setSelectedHour}
+              showFavoritesOnly={showFavoritesOnly}
+              onToggleFavorites={() => setShowFavoritesOnly(!showFavoritesOnly)}
+              activeFiltersCount={activeFiltersCount}
+              onClearFilters={clearFilters}
+            />
 
-            {displayCount < filteredSchedules.length && (
-              <div className="flex justify-center pt-4">
-                <Button
-                  variant="outline"
-                  onClick={() => setDisplayCount(displayCount + 15)}
-                  data-testid="button-load-more"
-                >
-                  Afficher plus
-                </Button>
-              </div>
+            {isError ? (
+              <EmptyState type="loading-error" />
+            ) : filteredSchedules.length === 0 ? (
+              showFavoritesOnly && favorites.length === 0 ? (
+                <EmptyState type="no-favorites" />
+              ) : (
+                <EmptyState type="no-results" onClearFilters={clearFilters} />
+              )
+            ) : (
+              <>
+                <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-4">
+                  {filteredSchedules.slice(0, displayCount).map(schedule => {
+                    // Utiliser une clé unique basée sur nom + arrondissement pour éviter les doublons
+                    const uniqueKey = `${schedule.neighborhood.name}_${schedule.neighborhood.district}`.toLowerCase().replace(/\s+/g, '_');
+                    return (
+                      <div
+                        key={uniqueKey}
+                        className={expandedCardId === schedule.neighborhood.id ? "lg:col-span-2 xl:col-span-3" : ""}
+                      >
+                        <NeighborhoodCard
+                          neighborhood={schedule.neighborhood}
+                          outages={schedule.outages}
+                          isFavorite={isFavorite(schedule.neighborhood.id)}
+                          onToggleFavorite={() => toggleFavorite(schedule.neighborhood.id)}
+                          currentHour={currentHour}
+                          filterHour={filterHour}
+                          isExpanded={expandedCardId === schedule.neighborhood.id}
+                          onToggleExpand={() => setExpandedCardId(expandedCardId === schedule.neighborhood.id ? null : schedule.neighborhood.id)}
+                        />
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {displayCount < filteredSchedules.length && (
+                  <div className="flex justify-center pt-4">
+                    <Button
+                      variant="outline"
+                      onClick={() => setDisplayCount(displayCount + 15)}
+                      data-testid="button-load-more"
+                    >
+                      Afficher plus
+                    </Button>
+                  </div>
+                )}
+              </>
             )}
           </>
         )}
@@ -219,7 +283,7 @@ export default function Home() {
             Les horaires de délestage sont indicatifs et peuvent varier.
             <br className="sm:hidden" />
             <span className="hidden sm:inline"> • </span>
-            Données simulées pour démonstration.
+            Données synchronisées depuis la base de données.
           </p>
         </div>
       </main>

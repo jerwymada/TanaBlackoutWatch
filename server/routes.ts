@@ -6,7 +6,11 @@ export async function registerRoutes(
   httpServer: Server,
   app: Express
 ): Promise<Server> {
-  await storage.seedData();
+  // Seed data asynchronously, don't block server startup
+  storage.seedData().catch((error: any) => {
+    console.error("Error seeding data:", error.message);
+    console.log("💡 Les données seront initialisées lors de la première requête");
+  });
 
   app.get("/api/neighborhoods", async (_req, res) => {
     try {
@@ -155,6 +159,51 @@ export async function registerRoutes(
     } catch (error) {
       console.error("Error creating outage:", error);
       res.status(500).json({ error: "Failed to create outage" });
+    }
+  });
+
+  app.patch("/api/admin/outages/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id, 10);
+      const { neighborhoodId, date, startHour, endHour, reason } = req.body;
+      
+      const updateData: any = {};
+      if (neighborhoodId !== undefined) updateData.neighborhoodId = parseInt(neighborhoodId, 10);
+      if (date !== undefined) updateData.date = date;
+      if (startHour !== undefined) updateData.startHour = parseFloat(startHour);
+      if (endHour !== undefined) updateData.endHour = parseFloat(endHour);
+      if (reason !== undefined) updateData.reason = reason;
+      
+      const outage = await storage.updateOutage(id, updateData);
+      if (!outage) {
+        return res.status(404).json({ error: "Outage not found" });
+      }
+      res.json(outage);
+    } catch (error) {
+      console.error("Error updating outage:", error);
+      res.status(500).json({ error: "Failed to update outage" });
+    }
+  });
+
+  app.patch("/api/admin/outages/bulk", async (req, res) => {
+    try {
+      const { ids, data } = req.body;
+      
+      if (!Array.isArray(ids) || ids.length === 0) {
+        return res.status(400).json({ error: "ids must be a non-empty array" });
+      }
+      
+      const updateData: any = {};
+      if (data.date !== undefined) updateData.date = data.date;
+      if (data.startHour !== undefined) updateData.startHour = parseFloat(data.startHour);
+      if (data.endHour !== undefined) updateData.endHour = parseFloat(data.endHour);
+      if (data.reason !== undefined) updateData.reason = data.reason;
+      
+      const outages = await storage.updateOutagesBulk(ids, updateData);
+      res.json(outages);
+    } catch (error) {
+      console.error("Error bulk updating outages:", error);
+      res.status(500).json({ error: "Failed to bulk update outages" });
     }
   });
 

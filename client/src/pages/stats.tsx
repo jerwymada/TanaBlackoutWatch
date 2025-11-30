@@ -1,7 +1,7 @@
 import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
-import { ArrowLeft, TrendingUp, Clock, MapPin, Calendar, BarChart2 } from "lucide-react";
+import { ArrowLeft, TrendingUp, Clock, MapPin, Calendar, BarChart2, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -204,47 +204,13 @@ export default function Stats() {
 
       <main className="container mx-auto px-3 py-4 sm:px-4 sm:py-6 space-y-6">
         {isLoading ? (
-          <>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              {Array.from({ length: 4 }).map((_, i) => (
-                <Card key={i}>
-                  <CardHeader className="flex flex-row items-center justify-between gap-2 pb-2">
-                    <Skeleton className="h-4 w-24" />
-                    <Skeleton className="h-4 w-4" />
-                  </CardHeader>
-                  <CardContent>
-                    <Skeleton className="h-8 w-16" />
-                    <Skeleton className="h-3 w-32 mt-2" />
-                  </CardContent>
-                </Card>
-              ))}
+          <div className="flex flex-col items-center justify-center gap-4 py-12 min-h-[400px]">
+            <Loader2 className="h-10 w-10 animate-spin text-primary" />
+            <div className="text-center">
+              <p className="text-base font-medium text-foreground mb-1">Chargement des statistiques...</p>
+              <p className="text-sm text-muted-foreground">Veuillez patienter</p>
             </div>
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <Card>
-                <CardHeader>
-                  <Skeleton className="h-5 w-48" />
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
-                    {Array.from({ length: 5 }).map((_, i) => (
-                      <div key={i} className="space-y-1">
-                        <Skeleton className="h-4 w-full" />
-                        <Skeleton className="h-2 w-full" />
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardHeader>
-                  <Skeleton className="h-5 w-48" />
-                </CardHeader>
-                <CardContent>
-                  <Skeleton className="h-32 w-full" />
-                </CardContent>
-              </Card>
-            </div>
-          </>
+          </div>
         ) : isError ? (
           <Card>
             <CardContent className="py-8 text-center">
@@ -310,7 +276,7 @@ export default function Stats() {
 
         <div className="text-center text-xs text-muted-foreground pt-4 border-t">
           <p>
-            Données historiques simulées pour démonstration.
+            Données historiques synchronisées depuis la base de données.
             <br className="sm:hidden" />
             <span className="hidden sm:inline"> • </span>
             <Link href="/" className="text-primary hover:underline">
