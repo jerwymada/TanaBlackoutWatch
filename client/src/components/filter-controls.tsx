@@ -1,4 +1,4 @@
-import { Search, Clock, Filter, X, Star } from "lucide-react";
+import { Search, Clock, Filter, X, Star, ZapOff } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -18,6 +18,9 @@ interface FilterControlsProps {
   onHourChange: (value: string) => void;
   showFavoritesOnly: boolean;
   onToggleFavorites: () => void;
+  showOutageOnly?: boolean;
+  onToggleOutage?: () => void;
+  currentHour?: number;
   activeFiltersCount: number;
   onClearFilters: () => void;
 }
@@ -29,6 +32,9 @@ export function FilterControls({
   onHourChange,
   showFavoritesOnly,
   onToggleFavorites,
+  showOutageOnly = false,
+  onToggleOutage,
+  currentHour,
   activeFiltersCount,
   onClearFilters,
 }: FilterControlsProps) {
@@ -72,6 +78,22 @@ export function FilterControls({
               })}
             </SelectContent>
           </Select>
+
+          {onToggleOutage && (
+            <Button
+              variant={showOutageOnly ? "default" : "outline"}
+              size="default"
+              onClick={onToggleOutage}
+              className={cn(
+                "h-11 px-4 shrink-0",
+                showOutageOnly && "bg-[hsl(6,78%,57%)] text-white hover:bg-[hsl(6,78%,52%)]"
+              )}
+              data-testid="button-toggle-outage"
+            >
+              <ZapOff className="h-4 w-4" />
+              <span className="hidden sm:inline ml-2">Coupure</span>
+            </Button>
+          )}
 
           <Button
             variant={showFavoritesOnly ? "default" : "outline"}
@@ -130,6 +152,20 @@ export function FilterControls({
             );
           })()}
           
+          {showOutageOnly && onToggleOutage && (
+            <Badge variant="secondary" className="gap-1.5 bg-[hsl(6,78%,57%)]/20 text-foreground">
+              <ZapOff className="h-3 w-3 text-[hsl(6,78%,57%)]" />
+              Coupure active
+              <button 
+                onClick={onToggleOutage}
+                className="hover:opacity-70"
+                aria-label="Supprimer le filtre coupure"
+              >
+                <X className="h-3 w-3" />
+              </button>
+            </Badge>
+          )}
+
           {showFavoritesOnly && (
             <Badge variant="secondary" className="gap-1.5 bg-favorite/20 text-foreground">
               <Star className="h-3 w-3 fill-favorite text-favorite" />

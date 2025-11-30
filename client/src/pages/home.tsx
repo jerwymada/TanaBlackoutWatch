@@ -18,7 +18,11 @@ export default function Home() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedHour, setSelectedHour] = useState("all");
   const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
-  const [currentHour, setCurrentHour] = useState(() => new Date().getHours());
+  const [showOutageOnly, setShowOutageOnly] = useState(false);
+  const [currentHour, setCurrentHour] = useState(() => {
+    const now = new Date();
+    return now.getHours() + (now.getMinutes() / 60);
+  });
   const [expandedCardId, setExpandedCardId] = useState<number | null>(null);
   const [displayCount, setDisplayCount] = useState(15);
   
@@ -26,14 +30,15 @@ export default function Home() {
 
   useEffect(() => {
     const interval = setInterval(() => {
-      setCurrentHour(new Date().getHours());
+      const now = new Date();
+      setCurrentHour(now.getHours() + (now.getMinutes() / 60));
     }, 60000);
     return () => clearInterval(interval);
   }, []);
 
   useEffect(() => {
     setDisplayCount(15);
-  }, [searchQuery, selectedHour, showFavoritesOnly]);
+  }, [searchQuery, selectedHour, showFavoritesOnly, showOutageOnly]);
 
   const { data: schedules, isLoading, isError, refetch, isFetching } = useQuery<OutageSchedule[]>({
     queryKey: ["/api/schedules"],
@@ -126,6 +131,15 @@ export default function Home() {
       );
     }
 
+    if (showOutageOnly) {
+      // Filtrer pour ne montrer que les quartiers avec une coupure active à l'heure actuelle
+      filtered = filtered.filter(schedule =>
+        schedule.outages.some(outage => 
+          currentHour >= outage.startHour && currentHour < outage.endHour
+        )
+      );
+    }
+
     filtered.sort((a, b) => {
       const aIsFavorite = isFavorite(a.neighborhood.id);
       const bIsFavorite = isFavorite(b.neighborhood.id);
@@ -135,18 +149,20 @@ export default function Home() {
     });
 
     return filtered;
-  }, [schedules, searchQuery, selectedHour, showFavoritesOnly, isFavorite]);
+  }, [schedules, searchQuery, selectedHour, showFavoritesOnly, showOutageOnly, currentHour, isFavorite]);
 
   const activeFiltersCount = [
     searchQuery.trim() !== "",
     selectedHour !== "all",
     showFavoritesOnly,
+    showOutageOnly,
   ].filter(Boolean).length;
 
   const clearFilters = () => {
     setSearchQuery("");
     setSelectedHour("all");
     setShowFavoritesOnly(false);
+    setShowOutageOnly(false);
   };
 
   const filterHour = selectedHour !== "all" ? parseFloat(selectedHour) : null;
@@ -203,7 +219,7 @@ export default function Home() {
             </span>
           </div>
           <div className="text-sm font-medium">
-            Heure actuelle: <span className="text-foreground font-bold">{currentHour.toString().padStart(2, '0')}:00</span>
+            Heure actuelle: <span className="text-foreground font-bold">{Math.floor(currentHour).toString().padStart(2, '0')}:{Math.floor((currentHour % 1) * 60).toString().padStart(2, '0')}</span>
           </div>
         </div>
 
@@ -224,6 +240,9 @@ export default function Home() {
               onHourChange={setSelectedHour}
               showFavoritesOnly={showFavoritesOnly}
               onToggleFavorites={() => setShowFavoritesOnly(!showFavoritesOnly)}
+              showOutageOnly={showOutageOnly}
+              onToggleOutage={() => setShowOutageOnly(!showOutageOnly)}
+              currentHour={currentHour}
               activeFiltersCount={activeFiltersCount}
               onClearFilters={clearFilters}
             />
